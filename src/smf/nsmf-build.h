@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 by Sukchan Lee <acetcom@gmail.com>
+ * Copyright (C) 2024-2025 by Sukchan Lee <acetcom@gmail.com>
  *
  * This file is part of Open5GS.
  *
@@ -27,7 +27,9 @@
 extern "C" {
 #endif
 
-ogs_sbi_request_t *smf_nsmf_pdusession_build_create_pdu_session(
+ogs_sbi_request_t *smf_nsmf_pdusession_build_create_request(
+        smf_sess_t *sess, void *data);
+ogs_sbi_request_t *smf_nsmf_pdusession_build_release_request(
         smf_sess_t *sess, void *data);
 
 #ifdef __cplusplus

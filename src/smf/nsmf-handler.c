@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2024 by Sukchan Lee <acetcom@gmail.com>
+ * Copyright (C) 2019-2025 by Sukchan Lee <acetcom@gmail.com>
  *
  * This file is part of Open5GS.
  *
@@ -984,18 +984,16 @@ bool smf_nsmf_handle_update_sm_context(
                     ogs_sbi_server_send_response(stream, response));
 
         } else if (PCF_SM_POLICY_ASSOCIATED(sess)) {
-            smf_npcf_smpolicycontrol_param_t param;
+            memset(&sess->release_data, 0, sizeof(sess->release_data));
 
-            memset(&param, 0, sizeof(param));
-
-            param.ue_location = true;
-            param.ue_timezone = true;
+            sess->release_data.ue_location = true;
+            sess->release_data.ue_timezone = true;
 
             r = smf_sbi_discover_and_send(
                     OGS_SBI_SERVICE_TYPE_NPCF_SMPOLICYCONTROL, NULL,
                     smf_npcf_smpolicycontrol_build_delete,
                     sess, stream,
-                    OGS_PFCP_DELETE_TRIGGER_AMF_UPDATE_SM_CONTEXT, &param);
+                    OGS_PFCP_DELETE_TRIGGER_AMF_UPDATE_SM_CONTEXT, NULL);
             ogs_expect(r == OGS_OK);
             ogs_assert(r != OGS_ERROR);
         } else if (UDM_SDM_SUBSCRIBED(sess)) {
@@ -1046,7 +1044,6 @@ bool smf_nsmf_handle_release_sm_context(
     smf_sess_t *sess, ogs_sbi_stream_t *stream, ogs_sbi_message_t *message)
 {
     int r;
-    smf_npcf_smpolicycontrol_param_t param;
     smf_ue_t *smf_ue = NULL;
 
     OpenAPI_sm_context_release_data_t *SmContextReleaseData = NULL;
@@ -1057,7 +1054,7 @@ bool smf_nsmf_handle_release_sm_context(
     smf_ue = smf_ue_find_by_id(sess->smf_ue_id);
     ogs_assert(smf_ue);
 
-    memset(&param, 0, sizeof(param));
+    memset(&sess->release_data, 0, sizeof(sess->release_data));
 
     SmContextReleaseData = message->SmContextReleaseData;
     if (SmContextReleaseData) {
@@ -1084,26 +1081,33 @@ bool smf_nsmf_handle_release_sm_context(
                     (long long)sess->nr_cgi.cell_id);
             }
 
-            param.ue_location = true;
-            param.ue_timezone = true;
+            sess->release_data.ue_location = true;
+            sess->release_data.ue_timezone = true;
         }
 
         if (SmContextReleaseData->ng_ap_cause) {
-            param.ran_nas_release.ngap_cause.group =
+            sess->release_data.ngap_cause.group =
                 SmContextReleaseData->ng_ap_cause->group;
-            param.ran_nas_release.ngap_cause.value =
+            sess->release_data.ngap_cause.value =
                 SmContextReleaseData->ng_ap_cause->value;
         }
-        param.ran_nas_release.gmm_cause =
+        sess->release_data.gmm_cause =
             SmContextReleaseData->_5g_mm_cause_value;
+        sess->release_data.cause = SmContextReleaseData->cause;
     }
 
-    if (PCF_SM_POLICY_ASSOCIATED(sess)) {
+    if (HOME_ROUTED_ROAMING_IN_VSMF(sess)) {
+        ogs_assert(OGS_OK ==
+            smf_5gc_pfcp_send_all_pdr_modification_request(
+                sess, stream,
+                OGS_PFCP_MODIFY_HOME_ROUTED_ROAMING|
+                OGS_PFCP_MODIFY_UL_ONLY|OGS_PFCP_MODIFY_DEACTIVATE, 0));
+    } else if (PCF_SM_POLICY_ASSOCIATED(sess)) {
         r = smf_sbi_discover_and_send(
                 OGS_SBI_SERVICE_TYPE_NPCF_SMPOLICYCONTROL, NULL,
                 smf_npcf_smpolicycontrol_build_delete,
                 sess, stream,
-                OGS_PFCP_DELETE_TRIGGER_AMF_RELEASE_SM_CONTEXT, &param);
+                OGS_PFCP_DELETE_TRIGGER_AMF_RELEASE_SM_CONTEXT, NULL);
         ogs_expect(r == OGS_OK);
         ogs_assert(r != OGS_ERROR);
     } else if (UDM_SDM_SUBSCRIBED(sess)) {

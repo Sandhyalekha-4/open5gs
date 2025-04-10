@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 by Sukchan Lee <acetcom@gmail.com>
+ * Copyright (C) 2024-2025 by Sukchan Lee <acetcom@gmail.com>
  *
  * This file is part of Open5GS.
  *
@@ -19,7 +19,7 @@
 
 #include "nsmf-build.h"
 
-ogs_sbi_request_t *smf_nsmf_pdusession_build_create_pdu_session(
+ogs_sbi_request_t *smf_nsmf_pdusession_build_create_request(
         smf_sess_t *sess, void *data)
 {
     ogs_sbi_message_t message;
@@ -287,17 +287,6 @@ ogs_sbi_request_t *smf_nsmf_pdusession_build_create_pdu_session(
     message.http.accept = (char *)(OGS_SBI_CONTENT_JSON_TYPE ","
         OGS_SBI_CONTENT_NGAP_TYPE "," OGS_SBI_CONTENT_PROBLEM_TYPE);
 
-    message.http.custom.callback =
-        (char *)OGS_SBI_CALLBACK_NSMF_PDUSESSION_STATUS_NOTIFY;
-
-#if 0 /* Needs to be checked against AMF's nsmf-build.c */
-    if (param && param->nrf_uri) {
-        message.http.custom.nrf_uri =
-            ogs_msprintf("%s: \"%s\"",
-                    OGS_SBI_SERVICE_NAME_NNRF_DISC, param->nrf_uri);
-    }
-#endif
-
     request = ogs_sbi_build_request(&message);
     ogs_expect(request);
 
@@ -340,6 +329,90 @@ end:
 
     if (message.http.custom.nrf_uri)
         ogs_free(message.http.custom.nrf_uri);
+
+    return request;
+}
+
+ogs_sbi_request_t *smf_nsmf_pdusession_build_release_request(
+        smf_sess_t *sess, void *data)
+{
+    ogs_sbi_message_t message;
+    ogs_sbi_request_t *request = NULL;
+
+    smf_ue_t *smf_ue = NULL;
+
+    OpenAPI_release_data_t ReleaseData;
+    OpenAPI_ng_ap_cause_t ngApCause;
+    OpenAPI_user_location_t ueLocation;
+
+    ogs_assert(sess);
+    smf_ue = smf_ue_find_by_id(sess->smf_ue_id);
+    ogs_assert(smf_ue);
+
+    memset(&message, 0, sizeof(message));
+    message.h.method = (char *)OGS_SBI_HTTP_METHOD_POST;
+    ogs_assert(sess->h_smf_uri);
+    message.h.uri = ogs_msprintf("%s/%s",
+            sess->pdu_session_resource_uri, OGS_SBI_RESOURCE_NAME_RELEASE);
+    ogs_assert(message.h.uri);
+
+    memset(&ReleaseData, 0, sizeof(ReleaseData));
+    memset(&ngApCause, 0, sizeof(ngApCause));
+    memset(&ueLocation, 0, sizeof(ueLocation));
+
+    ReleaseData.cause = sess->release_data.cause;
+
+    if (sess->release_data.ngap_cause.group) {
+        ReleaseData.ng_ap_cause = &ngApCause;
+        ngApCause.group = sess->release_data.ngap_cause.group;
+        ngApCause.value = sess->release_data.ngap_cause.value;
+    }
+
+    if (sess->release_data.gmm_cause) {
+        ReleaseData.is__5g_mm_cause_value = true;
+        ReleaseData._5g_mm_cause_value = sess->release_data.gmm_cause;
+    }
+
+    if (sess->release_data.ue_location) {
+        ueLocation.nr_location = ogs_sbi_build_nr_location(
+                &sess->nr_tai, &sess->nr_cgi);
+        if (!ueLocation.nr_location) {
+            ogs_error("No ueLocation.nr_location");
+            goto end;
+        }
+        ueLocation.nr_location->ue_location_timestamp =
+            ogs_sbi_gmtime_string(sess->ue_location_timestamp);
+        if (!ueLocation.nr_location->ue_location_timestamp) {
+            ogs_error("No ue_location_timestamp");
+            goto end;
+        }
+
+        ReleaseData.ue_location = &ueLocation;
+    }
+    if (sess->release_data.ue_timezone) {
+        ReleaseData.ue_time_zone = ogs_sbi_timezone_string(ogs_timezone());
+        if (!ReleaseData.ue_time_zone) {
+            ogs_error("No ue_time_zone");
+            goto end;
+        }
+    }
+
+    message.ReleaseData = &ReleaseData;
+
+    request = ogs_sbi_build_request(&message);
+    ogs_expect(request);
+
+end:
+    if (message.h.uri)
+        ogs_free(message.h.uri);
+
+    if (ueLocation.nr_location) {
+        if (ueLocation.nr_location->ue_location_timestamp)
+            ogs_free(ueLocation.nr_location->ue_location_timestamp);
+        ogs_sbi_free_nr_location(ueLocation.nr_location);
+    }
+    if (ReleaseData.ue_time_zone)
+        ogs_free(ReleaseData.ue_time_zone);
 
     return request;
 }

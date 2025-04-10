@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2023 by Sukchan Lee <acetcom@gmail.com>
+ * Copyright (C) 2019-2025 by Sukchan Lee <acetcom@gmail.com>
  *
  * This file is part of Open5GS.
  *
@@ -483,6 +483,13 @@ void smf_5gc_n4_handle_session_modification_response(
             param.skip_ind = true;
 
             smf_namf_comm_send_n1_n2_message_transfer(sess, &param);
+        } else if (flags & OGS_PFCP_MODIFY_HOME_ROUTED_ROAMING) {
+            int r = smf_sbi_discover_and_send(
+                    OGS_SBI_SERVICE_TYPE_NSMF_PDUSESSION, NULL,
+                    smf_nsmf_pdusession_build_release_request,
+                    sess, NULL, 0, NULL);
+            ogs_expect(r == OGS_OK);
+            ogs_assert(r != OGS_ERROR);
         } else {
             smf_sbi_send_sm_context_updated_data_up_cnx_state(
                     sess, stream, OpenAPI_up_cnx_state_DEACTIVATED);

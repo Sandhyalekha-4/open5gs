@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2024 by Sukchan Lee <acetcom@gmail.com>
+ * Copyright (C) 2019-2025 by Sukchan Lee <acetcom@gmail.com>
  *
  * This file is part of Open5GS.
  *
@@ -811,7 +811,7 @@ void smf_gsm_state_wait_pfcp_establishment(ogs_fsm_t *s, smf_event_t *e)
                 if (HOME_ROUTED_ROAMING_IN_VSMF(sess)) {
                     r = smf_sbi_discover_and_send(
                             OGS_SBI_SERVICE_TYPE_NSMF_PDUSESSION, NULL,
-                            smf_nsmf_pdusession_build_create_pdu_session,
+                            smf_nsmf_pdusession_build_create_request,
                             sess, NULL, 0, NULL);
                     ogs_expect(r == OGS_OK);
                     ogs_assert(r != OGS_ERROR);
@@ -1258,21 +1258,19 @@ void smf_gsm_state_operational(ogs_fsm_t *s, smf_event_t *e)
 
         case OGS_NAS_5GS_PDU_SESSION_RELEASE_REQUEST:
             if (PCF_SM_POLICY_ASSOCIATED(sess)) {
-                smf_npcf_smpolicycontrol_param_t param;
+                memset(&sess->release_data, 0, sizeof(sess->release_data));
 
-                memset(&param, 0, sizeof(param));
-
-                param.ran_nas_release.gsm_cause =
+                sess->release_data.gsm_cause =
                     OGS_5GSM_CAUSE_REGULAR_DEACTIVATION;
-                param.ran_nas_release.ngap_cause.group = NGAP_Cause_PR_nas;
-                param.ran_nas_release.ngap_cause.value =
+                sess->release_data.ngap_cause.group = NGAP_Cause_PR_nas;
+                sess->release_data.ngap_cause.value =
                     NGAP_CauseNas_normal_release;
 
                 r = smf_sbi_discover_and_send(
                         OGS_SBI_SERVICE_TYPE_NPCF_SMPOLICYCONTROL, NULL,
                         smf_npcf_smpolicycontrol_build_delete,
                         sess, stream,
-                        OGS_PFCP_DELETE_TRIGGER_UE_REQUESTED, &param);
+                        OGS_PFCP_DELETE_TRIGGER_UE_REQUESTED, NULL);
                 ogs_expect(r == OGS_OK);
                 ogs_assert(r != OGS_ERROR);
             } else if (UDM_SDM_SUBSCRIBED(sess)) {
@@ -2120,19 +2118,18 @@ void smf_gsm_state_5gc_n1_n2_reject(ogs_fsm_t *s, smf_event_t *e)
     switch (e->h.id) {
     case OGS_FSM_ENTRY_SIG:
         if (PCF_SM_POLICY_ASSOCIATED(sess)) {
-            smf_npcf_smpolicycontrol_param_t param;
             int r = 0;
 
-            memset(&param, 0, sizeof(param));
+            memset(&sess->release_data, 0, sizeof(sess->release_data));
 
-            param.ue_location = true;
-            param.ue_timezone = true;
+            sess->release_data.ue_location = true;
+            sess->release_data.ue_timezone = true;
 
             r = smf_sbi_discover_and_send(
                     OGS_SBI_SERVICE_TYPE_NPCF_SMPOLICYCONTROL, NULL,
                     smf_npcf_smpolicycontrol_build_delete,
                     sess, NULL,
-                    OGS_PFCP_DELETE_TRIGGER_AMF_UPDATE_SM_CONTEXT, &param);
+                    OGS_PFCP_DELETE_TRIGGER_AMF_UPDATE_SM_CONTEXT, NULL);
             ogs_expect(r == OGS_OK);
         } else {
             smf_namf_comm_send_n1_n2_pdu_establishment_reject(sess);

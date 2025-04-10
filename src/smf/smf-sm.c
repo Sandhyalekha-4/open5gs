@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2024 by Sukchan Lee <acetcom@gmail.com>
+ * Copyright (C) 2019-2025 by Sukchan Lee <acetcom@gmail.com>
  *
  * This file is part of Open5GS.
  *
@@ -957,7 +957,7 @@ void smf_state_operational(ogs_fsm_t *s, smf_event_t *e)
             ogs_assert(smf_ue);
 
             if (state == SMF_UECM_STATE_REGISTERED ||
-                state ==SMF_UECM_STATE_REGISTERED_BY_HOME_ROUTED_ROAMING) {
+                state == SMF_UECM_STATE_REGISTERED_BY_HOME_ROUTED_ROAMING) {
                 /* SMF Registration */
                 if (sbi_message.res_status != OGS_SBI_HTTP_STATUS_OK &&
                     sbi_message.res_status != OGS_SBI_HTTP_STATUS_CREATED)

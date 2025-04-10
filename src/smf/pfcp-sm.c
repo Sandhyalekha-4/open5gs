@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2024 by Sukchan Lee <acetcom@gmail.com>
+ * Copyright (C) 2019-2025 by Sukchan Lee <acetcom@gmail.com>
  *
  * This file is part of Open5GS.
  *
@@ -524,18 +524,17 @@ static void reselect_upf(ogs_pfcp_node_t *node)
                             smf_ue->imsi_bcd, sess->session.name);
                 } else {
                     if (PCF_SM_POLICY_ASSOCIATED(sess)) {
-                        smf_npcf_smpolicycontrol_param_t param;
-
                         ogs_info("[%s:%d] SMF-initiated Deletion",
                                 smf_ue->supi, sess->psi);
                         ogs_assert(sess->sm_context_ref);
-                        memset(&param, 0, sizeof(param));
+                        memset(&sess->release_data, 0,
+                                sizeof(sess->release_data));
                         r = smf_sbi_discover_and_send(
                                 OGS_SBI_SERVICE_TYPE_NPCF_SMPOLICYCONTROL, NULL,
                                 smf_npcf_smpolicycontrol_build_delete,
                                 sess, NULL,
                                 OGS_PFCP_DELETE_TRIGGER_SMF_INITIATED,
-                                &param);
+                                NULL);
                         ogs_expect(r == OGS_OK);
                         ogs_assert(r != OGS_ERROR);
                     } else {

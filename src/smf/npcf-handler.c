@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2024 by Sukchan Lee <acetcom@gmail.com>
+ * Copyright (C) 2019-2025 by Sukchan Lee <acetcom@gmail.com>
  *
  * This file is part of Open5GS.
  *
@@ -760,7 +760,6 @@ bool smf_npcf_smpolicycontrol_handle_terminate_notify(
         smf_sess_t *sess, ogs_sbi_stream_t *stream, ogs_sbi_message_t *recvmsg)
 {
     smf_ue_t *smf_ue = NULL;
-    smf_npcf_smpolicycontrol_param_t param;
     int r;
 
     ogs_assert(sess);
@@ -773,11 +772,11 @@ bool smf_npcf_smpolicycontrol_handle_terminate_notify(
     ogs_assert(true == ogs_sbi_send_http_status_no_content(stream));
 
     if (PCF_SM_POLICY_ASSOCIATED(sess)) {
-        memset(&param, 0, sizeof(param));
+        memset(&sess->release_data, 0, sizeof(sess->release_data));
         r = smf_sbi_discover_and_send(
                 OGS_SBI_SERVICE_TYPE_NPCF_SMPOLICYCONTROL, NULL,
                 smf_npcf_smpolicycontrol_build_delete,
-                sess, NULL, OGS_PFCP_DELETE_TRIGGER_PCF_INITIATED, &param);
+                sess, NULL, OGS_PFCP_DELETE_TRIGGER_PCF_INITIATED, NULL);
         ogs_expect(r == OGS_OK);
         ogs_assert(r != OGS_ERROR);
     } else {

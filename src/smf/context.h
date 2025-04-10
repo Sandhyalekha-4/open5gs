@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2024 by Sukchan Lee <acetcom@gmail.com>
+ * Copyright (C) 2019-2025 by Sukchan Lee <acetcom@gmail.com>
  *
  * This file is part of Open5GS.
  *
@@ -63,6 +63,24 @@ typedef struct smf_ctf_config_s {
 } smf_ctf_config_t;
 
 int smf_ctf_config_init(smf_ctf_config_t *ctf_config);
+
+typedef struct smf_release_data_s {
+    OpenAPI_cause_e cause;
+
+    struct {
+        int group;
+        int value;
+    } ngap_cause;
+
+    int gmm_cause;
+    int gsm_cause;
+
+    struct {
+    ED3(uint8_t ue_location:1;,
+        uint8_t ue_timezone:1;,
+        uint8_t spare:6;)
+    };
+} smf_release_data_t;
 
 typedef struct smf_context_s {
     smf_ctf_config_t    ctf_config;
@@ -584,6 +602,10 @@ typedef struct smf_sess_s {
 
     bool n1_released;
     bool n2_released;
+
+    /* SmContextReleaseData */
+    smf_release_data_t release_data;
+
 } smf_sess_t;
 
 void smf_context_init(void);
