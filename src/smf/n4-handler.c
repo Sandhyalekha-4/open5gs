@@ -487,7 +487,8 @@ void smf_5gc_n4_handle_session_modification_response(
             int r = smf_sbi_discover_and_send(
                     OGS_SBI_SERVICE_TYPE_NSMF_PDUSESSION, NULL,
                     smf_nsmf_pdusession_build_release_request,
-                    sess, NULL, 0, NULL);
+                    sess, stream,
+                    OGS_PFCP_DELETE_TRIGGER_AMF_RELEASE_SM_CONTEXT, NULL);
             ogs_expect(r == OGS_OK);
             ogs_assert(r != OGS_ERROR);
         } else {

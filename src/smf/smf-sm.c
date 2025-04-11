@@ -1034,6 +1034,13 @@ void smf_state_operational(ogs_fsm_t *s, smf_event_t *e)
                     ogs_assert(sbi_object_id >= OGS_MIN_POOL_ID &&
                             sbi_object_id <= OGS_MAX_POOL_ID);
 
+                    if (sbi_xact->assoc_stream_id >= OGS_MIN_POOL_ID &&
+                        sbi_xact->assoc_stream_id <= OGS_MAX_POOL_ID)
+                        stream = ogs_sbi_stream_find_by_id(
+                                sbi_xact->assoc_stream_id);
+
+                    state = sbi_xact->state;
+
                     ogs_sbi_xact_remove(sbi_xact);
 
                     sess = smf_sess_find_by_id(sbi_object_id);
@@ -1046,8 +1053,13 @@ void smf_state_operational(ogs_fsm_t *s, smf_event_t *e)
 
                     SWITCH(sbi_message.h.resource.component[2])
                     CASE(OGS_SBI_RESOURCE_NAME_MODIFY)
-                    CASE(OGS_SBI_RESOURCE_NAME_RELEASE)
                         ogs_error("Not Implemented");
+                        break;
+                    CASE(OGS_SBI_RESOURCE_NAME_RELEASE)
+                        ogs_assert(OGS_OK ==
+                            smf_5gc_pfcp_send_session_deletion_request(
+                                sess, stream,
+                                OGS_PFCP_DELETE_TRIGGER_HOME_ROUTED_IN_VMF));
                         break;
                     DEFAULT
                         if (smf_nsmf_handle_create_pdu_session_in_vsmf(

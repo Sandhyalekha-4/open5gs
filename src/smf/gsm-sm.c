@@ -295,7 +295,7 @@ void smf_gsm_state_initial(ogs_fsm_t *s, smf_event_t *e)
                     }
 
                     if (HOME_ROUTED_ROAMING_IN_VSMF(sess)) {
-                        ogs_info("[%s:%d] Home-Routed Roaming in V-SMF",
+                        ogs_info("[%s:%d] SMContextCreate HR Roaming in V-SMF",
                                 smf_ue->supi, sess->psi);
                         OGS_FSM_TRAN(s, smf_gsm_state_wait_pfcp_establishment);
                     }
@@ -988,7 +988,7 @@ void smf_gsm_state_operational(ogs_fsm_t *s, smf_event_t *e)
 
         case OGS_PFCP_SESSION_DELETION_RESPONSE_TYPE:
             ogs_error("EPC Session Released by Error Indication");
-            OGS_FSM_TRAN(s, smf_gsm_state_epc_session_will_release);
+            OGS_FSM_TRAN(s, smf_gsm_state_session_will_release);
             break;
 
         case OGS_PFCP_SESSION_REPORT_REQUEST_TYPE:
@@ -1029,6 +1029,9 @@ void smf_gsm_state_operational(ogs_fsm_t *s, smf_event_t *e)
         sbi_message = e->h.sbi.message;
         ogs_assert(sbi_message);
 
+        smf_ue = smf_ue_find_by_id(sess->smf_ue_id);
+        ogs_assert(smf_ue);
+
         stream_id = OGS_POINTER_TO_UINT(e->h.sbi.data);
         ogs_assert(stream_id >= OGS_MIN_POOL_ID &&
                 stream_id <= OGS_MAX_POOL_ID);
@@ -1047,6 +1050,12 @@ void smf_gsm_state_operational(ogs_fsm_t *s, smf_event_t *e)
                 break;
             CASE(OGS_SBI_RESOURCE_NAME_RELEASE)
                 smf_nsmf_handle_release_sm_context(sess, stream, sbi_message);
+
+                if (HOME_ROUTED_ROAMING_IN_VSMF(sess)) {
+                    ogs_info("[%s:%d] SMContextRelease HR Roaming in V-SMF",
+                            smf_ue->supi, sess->psi);
+                    OGS_FSM_TRAN(s, smf_gsm_state_wait_pfcp_deletion);
+                }
                 break;
             DEFAULT
                 ogs_error("Invalid resource name [%s]",
@@ -1479,7 +1488,7 @@ void smf_gsm_state_wait_pfcp_deletion(ogs_fsm_t *s, smf_event_t *e)
             ogs_assert(OGS_OK ==
                 smf_epc_pfcp_send_session_deletion_request(
                     sess, gtp_xact ? gtp_xact->id : OGS_INVALID_POOL_ID));
-        } else {
+        } else if (!HOME_ROUTED_ROAMING_IN_VSMF(sess)) {
             /* 5GC */
             stream_id = OGS_POINTER_TO_UINT(e->h.sbi.data);
             ogs_assert(stream_id >= OGS_MIN_POOL_ID &&
@@ -1619,6 +1628,11 @@ void smf_gsm_state_wait_pfcp_deletion(ogs_fsm_t *s, smf_event_t *e)
                     smf_namf_comm_send_n1_n2_message_transfer(sess, &param);
 
                     OGS_FSM_TRAN(s, smf_gsm_state_wait_5gc_n1_n2_release);
+                } else if (trigger ==
+                        OGS_PFCP_DELETE_TRIGGER_HOME_ROUTED_IN_VMF) {
+                    ogs_assert(true ==
+                            ogs_sbi_send_http_status_no_content(stream));
+                    OGS_FSM_TRAN(s, smf_gsm_state_session_will_release);
                 } else {
                     ogs_fatal("Unknown trigger [%d]", trigger);
                     ogs_assert_if_reached();
@@ -1794,7 +1808,7 @@ test_can_proceed:
                 send_gtp_delete_err_msg(sess, gtp_xact, gtp_cause);
             }
         }
-        OGS_FSM_TRAN(s, smf_gsm_state_epc_session_will_release);
+        OGS_FSM_TRAN(s, smf_gsm_state_session_will_release);
     }
 }
 
@@ -1849,6 +1863,12 @@ void smf_gsm_state_wait_5gc_n1_n2_release(ogs_fsm_t *s, smf_event_t *e)
                 break;
             CASE(OGS_SBI_RESOURCE_NAME_RELEASE)
                 smf_nsmf_handle_release_sm_context(sess, stream, sbi_message);
+
+                if (HOME_ROUTED_ROAMING_IN_VSMF(sess)) {
+                    ogs_info("[%s:%d] SMContextRelease HR Roaming in V-SMF",
+                            smf_ue->supi, sess->psi);
+                    OGS_FSM_TRAN(s, smf_gsm_state_wait_pfcp_deletion);
+                }
                 break;
             DEFAULT
                 ogs_error("Invalid resource name [%s]",
@@ -2192,7 +2212,7 @@ void smf_gsm_state_5gc_n1_n2_reject(ogs_fsm_t *s, smf_event_t *e)
         CASE(OGS_SBI_SERVICE_NAME_NAMF_COMM)
             SWITCH(sbi_message->h.resource.component[0])
             CASE(OGS_SBI_RESOURCE_NAME_UE_CONTEXTS)
-                OGS_FSM_TRAN(s, smf_gsm_state_epc_session_will_release);
+                OGS_FSM_TRAN(s, smf_gsm_state_session_will_release);
                 break;
 
             DEFAULT
@@ -2340,7 +2360,7 @@ void smf_gsm_state_5gc_session_will_deregister(ogs_fsm_t *s, smf_event_t *e)
     }
 }
 
-void smf_gsm_state_epc_session_will_release(ogs_fsm_t *s, smf_event_t *e)
+void smf_gsm_state_session_will_release(ogs_fsm_t *s, smf_event_t *e)
 {
     smf_sess_t *sess = NULL;
     ogs_assert(s);
