@@ -1058,8 +1058,7 @@ void smf_state_operational(ogs_fsm_t *s, smf_event_t *e)
                     CASE(OGS_SBI_RESOURCE_NAME_RELEASE)
                         ogs_assert(OGS_OK ==
                             smf_5gc_pfcp_send_session_deletion_request(
-                                sess, stream,
-                                OGS_PFCP_DELETE_TRIGGER_HOME_ROUTED_IN_VMF));
+                                sess, stream, state));
                         break;
                     DEFAULT
                         if (smf_nsmf_handle_create_pdu_session_in_vsmf(

@@ -892,7 +892,7 @@ void smf_gsm_state_operational(ogs_fsm_t *s, smf_event_t *e)
     ogs_gtp2_message_t *gtp2_message = NULL;
     uint8_t gtp1_cause, gtp2_cause;
     bool release;
-    int r;
+    int r, trigger;
 
     int state = 0;
 
@@ -1049,10 +1049,10 @@ void smf_gsm_state_operational(ogs_fsm_t *s, smf_event_t *e)
                 smf_nsmf_handle_update_sm_context(sess, stream, sbi_message);
                 break;
             CASE(OGS_SBI_RESOURCE_NAME_RELEASE)
-                smf_nsmf_handle_release_sm_context(sess, stream, sbi_message);
+                smf_nsmf_handle_release_data(sess, stream, sbi_message);
 
                 if (HOME_ROUTED_ROAMING_IN_VSMF(sess)) {
-                    ogs_info("[%s:%d] SMContextRelease HR Roaming in V-SMF",
+                    ogs_info("[%s:%d] Session Release in HR Roaming(V-SMF)",
                             smf_ue->supi, sess->psi);
                     OGS_FSM_TRAN(s, smf_gsm_state_wait_pfcp_deletion);
                 }
@@ -1266,20 +1266,28 @@ void smf_gsm_state_operational(ogs_fsm_t *s, smf_event_t *e)
             break;
 
         case OGS_NAS_5GS_PDU_SESSION_RELEASE_REQUEST:
-            if (PCF_SM_POLICY_ASSOCIATED(sess)) {
-                memset(&sess->release_data, 0, sizeof(sess->release_data));
+            memset(&sess->release_data, 0, sizeof(sess->release_data));
 
-                sess->release_data.gsm_cause =
-                    OGS_5GSM_CAUSE_REGULAR_DEACTIVATION;
-                sess->release_data.ngap_cause.group = NGAP_Cause_PR_nas;
-                sess->release_data.ngap_cause.value =
-                    NGAP_CauseNas_normal_release;
+            sess->release_data.gsm_cause =
+                OGS_5GSM_CAUSE_REGULAR_DEACTIVATION;
+            sess->release_data.ngap_cause.group = NGAP_Cause_PR_nas;
+            sess->release_data.ngap_cause.value =
+                NGAP_CauseNas_normal_release;
 
+            trigger = OGS_PFCP_DELETE_TRIGGER_UE_REQUESTED;
+
+            if (HOME_ROUTED_ROAMING_IN_VSMF(sess)) {
+                ogs_assert(OGS_OK ==
+                    smf_5gc_pfcp_send_all_pdr_modification_request(
+                        sess, stream,
+                        OGS_PFCP_MODIFY_HOME_ROUTED_ROAMING|
+                        OGS_PFCP_MODIFY_UL_ONLY|OGS_PFCP_MODIFY_DEACTIVATE,
+                        trigger, 0));
+            } else if (PCF_SM_POLICY_ASSOCIATED(sess)) {
                 r = smf_sbi_discover_and_send(
                         OGS_SBI_SERVICE_TYPE_NPCF_SMPOLICYCONTROL, NULL,
                         smf_npcf_smpolicycontrol_build_delete,
-                        sess, stream,
-                        OGS_PFCP_DELETE_TRIGGER_UE_REQUESTED, NULL);
+                        sess, stream, trigger, NULL);
                 ogs_expect(r == OGS_OK);
                 ogs_assert(r != OGS_ERROR);
             } else if (UDM_SDM_SUBSCRIBED(sess)) {
@@ -1564,7 +1572,13 @@ void smf_gsm_state_wait_pfcp_deletion(ogs_fsm_t *s, smf_event_t *e)
                     break;
                 }
 
-                if (trigger == OGS_PFCP_DELETE_TRIGGER_LOCAL_INITIATED) {
+                if (HOME_ROUTED_ROAMING_IN_VSMF(sess)) {
+
+                    ogs_assert(true ==
+                            ogs_sbi_send_http_status_no_content(stream));
+                    OGS_FSM_TRAN(s, smf_gsm_state_session_will_release);
+
+                } else if (trigger == OGS_PFCP_DELETE_TRIGGER_LOCAL_INITIATED) {
 
                     ogs_error("OLD Session Released");
                     OGS_FSM_TRAN(s, smf_gsm_state_5gc_session_will_deregister);
@@ -1628,11 +1642,6 @@ void smf_gsm_state_wait_pfcp_deletion(ogs_fsm_t *s, smf_event_t *e)
                     smf_namf_comm_send_n1_n2_message_transfer(sess, &param);
 
                     OGS_FSM_TRAN(s, smf_gsm_state_wait_5gc_n1_n2_release);
-                } else if (trigger ==
-                        OGS_PFCP_DELETE_TRIGGER_HOME_ROUTED_IN_VMF) {
-                    ogs_assert(true ==
-                            ogs_sbi_send_http_status_no_content(stream));
-                    OGS_FSM_TRAN(s, smf_gsm_state_session_will_release);
                 } else {
                     ogs_fatal("Unknown trigger [%d]", trigger);
                     ogs_assert_if_reached();
@@ -1862,7 +1871,7 @@ void smf_gsm_state_wait_5gc_n1_n2_release(ogs_fsm_t *s, smf_event_t *e)
                 smf_nsmf_handle_update_sm_context(sess, stream, sbi_message);
                 break;
             CASE(OGS_SBI_RESOURCE_NAME_RELEASE)
-                smf_nsmf_handle_release_sm_context(sess, stream, sbi_message);
+                smf_nsmf_handle_release_data(sess, stream, sbi_message);
 
                 if (HOME_ROUTED_ROAMING_IN_VSMF(sess)) {
                     ogs_info("[%s:%d] SMContextRelease HR Roaming in V-SMF",

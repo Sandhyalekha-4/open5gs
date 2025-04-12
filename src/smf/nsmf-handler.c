@@ -770,7 +770,8 @@ bool smf_nsmf_handle_update_sm_context(
                 ogs_assert(OGS_OK ==
                     smf_5gc_pfcp_send_all_pdr_modification_request(
                         sess, stream,
-                        OGS_PFCP_MODIFY_DL_ONLY|OGS_PFCP_MODIFY_DEACTIVATE, 0));
+                        OGS_PFCP_MODIFY_DL_ONLY|OGS_PFCP_MODIFY_DEACTIVATE,
+                        0, 0));
             }
 
         } else if (SmContextUpdateData->up_cnx_state ==
@@ -916,7 +917,7 @@ bool smf_nsmf_handle_update_sm_context(
                         sess, stream,
                         OGS_PFCP_MODIFY_DL_ONLY|OGS_PFCP_MODIFY_ACTIVATE|
                         OGS_PFCP_MODIFY_N2_HANDOVER|OGS_PFCP_MODIFY_END_MARKER,
-                        0));
+                        0, 0));
             } else {
                 char *strerror = ogs_msprintf(
                         "[%s:%d] No FAR Update", smf_ue->supi, sess->psi);
@@ -949,7 +950,7 @@ bool smf_nsmf_handle_update_sm_context(
                         sess, stream,
                         OGS_PFCP_MODIFY_INDIRECT|OGS_PFCP_MODIFY_REMOVE|
                         OGS_PFCP_MODIFY_HANDOVER_CANCEL,
-                        0));
+                        0, 0));
             } else {
                 smf_sbi_send_sm_context_updated_data_ho_state(
                         sess, stream, OpenAPI_ho_state_CANCELLED);
@@ -1040,13 +1041,14 @@ bool smf_nsmf_handle_update_sm_context(
     return true;
 }
 
-bool smf_nsmf_handle_release_sm_context(
+bool smf_nsmf_handle_release_data(
     smf_sess_t *sess, ogs_sbi_stream_t *stream, ogs_sbi_message_t *message)
 {
-    int r;
+    int r, trigger;
     smf_ue_t *smf_ue = NULL;
 
     OpenAPI_sm_context_release_data_t *SmContextReleaseData = NULL;
+    OpenAPI_release_data_t *ReleaseData = NULL;
 
     ogs_assert(stream);
     ogs_assert(message);
@@ -1056,7 +1058,19 @@ bool smf_nsmf_handle_release_sm_context(
 
     memset(&sess->release_data, 0, sizeof(sess->release_data));
 
-    SmContextReleaseData = message->SmContextReleaseData;
+    SWITCH(message->h.resource.component[0])
+    CASE(OGS_SBI_RESOURCE_NAME_SM_CONTEXTS)
+        SmContextReleaseData = message->SmContextReleaseData;
+        break;
+    CASE(OGS_SBI_RESOURCE_NAME_PDU_SESSIONS)
+        ReleaseData = message->ReleaseData;
+        break;
+    DEFAULT
+        ogs_error("Invalid resource name [%s]",
+                message->h.resource.component[0]);
+        ogs_assert_if_reached();
+    END
+
     if (SmContextReleaseData) {
         if (SmContextReleaseData->ue_location &&
             SmContextReleaseData->ue_location->nr_location) {
@@ -1096,18 +1110,58 @@ bool smf_nsmf_handle_release_sm_context(
         sess->release_data.cause = SmContextReleaseData->cause;
     }
 
+    if (ReleaseData) {
+        if (ReleaseData->ue_location &&
+            ReleaseData->ue_location->nr_location) {
+            OpenAPI_nr_location_t *NrLocation =
+                ReleaseData->ue_location->nr_location;
+            if (NrLocation->tai &&
+                NrLocation->tai->plmn_id && NrLocation->tai->tac &&
+                NrLocation->ncgi &&
+                NrLocation->ncgi->plmn_id && NrLocation->ncgi->nr_cell_id) {
+
+                ogs_sbi_parse_nr_location(
+                        &sess->nr_tai, &sess->nr_cgi, NrLocation);
+                if (NrLocation->ue_location_timestamp)
+                    ogs_sbi_time_from_string(&sess->ue_location_timestamp,
+                            NrLocation->ue_location_timestamp);
+
+                ogs_debug("    TAI[PLMN_ID:%06x,TAC:%d]",
+                    ogs_plmn_id_hexdump(&sess->nr_tai.plmn_id),
+                    sess->nr_tai.tac.v);
+                ogs_debug("    NR_CGI[PLMN_ID:%06x,CELL_ID:0x%llx]",
+                    ogs_plmn_id_hexdump(&sess->nr_cgi.plmn_id),
+                    (long long)sess->nr_cgi.cell_id);
+            }
+
+            sess->release_data.ue_location = true;
+            sess->release_data.ue_timezone = true;
+        }
+
+        if (ReleaseData->ng_ap_cause) {
+            sess->release_data.ngap_cause.group =
+                ReleaseData->ng_ap_cause->group;
+            sess->release_data.ngap_cause.value =
+                ReleaseData->ng_ap_cause->value;
+        }
+        sess->release_data.gmm_cause = ReleaseData->_5g_mm_cause_value;
+        sess->release_data.cause = ReleaseData->cause;
+    }
+
+    trigger = OGS_PFCP_DELETE_TRIGGER_AMF_RELEASE_SM_CONTEXT;
+
     if (HOME_ROUTED_ROAMING_IN_VSMF(sess)) {
         ogs_assert(OGS_OK ==
             smf_5gc_pfcp_send_all_pdr_modification_request(
                 sess, stream,
                 OGS_PFCP_MODIFY_HOME_ROUTED_ROAMING|
-                OGS_PFCP_MODIFY_UL_ONLY|OGS_PFCP_MODIFY_DEACTIVATE, 0));
+                OGS_PFCP_MODIFY_UL_ONLY|OGS_PFCP_MODIFY_DEACTIVATE,
+                trigger, 0));
     } else if (PCF_SM_POLICY_ASSOCIATED(sess)) {
         r = smf_sbi_discover_and_send(
                 OGS_SBI_SERVICE_TYPE_NPCF_SMPOLICYCONTROL, NULL,
                 smf_npcf_smpolicycontrol_build_delete,
-                sess, stream,
-                OGS_PFCP_DELETE_TRIGGER_AMF_RELEASE_SM_CONTEXT, NULL);
+                sess, stream, trigger, NULL);
         ogs_expect(r == OGS_OK);
         ogs_assert(r != OGS_ERROR);
     } else if (UDM_SDM_SUBSCRIBED(sess)) {

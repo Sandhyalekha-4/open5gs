@@ -30,7 +30,7 @@ bool smf_nsmf_handle_create_sm_context(
     smf_sess_t *sess, ogs_sbi_stream_t *stream, ogs_sbi_message_t *message);
 bool smf_nsmf_handle_update_sm_context(
     smf_sess_t *sess, ogs_sbi_stream_t *stream, ogs_sbi_message_t *message);
-bool smf_nsmf_handle_release_sm_context(
+bool smf_nsmf_handle_release_data(
     smf_sess_t *sess, ogs_sbi_stream_t *stream, ogs_sbi_message_t *message);
 
 bool smf_nsmf_handle_create_pdu_session_in_hsmf(

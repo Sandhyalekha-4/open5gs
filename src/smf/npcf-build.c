@@ -385,10 +385,14 @@ ogs_sbi_request_t *smf_npcf_smpolicycontrol_build_delete(
             ngApCause->value = sess->release_data.ngap_cause.value;
         }
 
-        ranNasRelCause->is__5g_mm_cause = true;
-        ranNasRelCause->_5g_mm_cause = sess->release_data.gmm_cause;
-        ranNasRelCause->is__5g_sm_cause = true;
-        ranNasRelCause->_5g_sm_cause = sess->release_data.gsm_cause;
+        if (sess->release_data.gmm_cause) {
+            ranNasRelCause->is__5g_mm_cause = true;
+            ranNasRelCause->_5g_mm_cause = sess->release_data.gmm_cause;
+        }
+        if (sess->release_data.gsm_cause) {
+            ranNasRelCause->is__5g_sm_cause = true;
+            ranNasRelCause->_5g_sm_cause = sess->release_data.gsm_cause;
+        }
 
         OpenAPI_list_add(ranNasRelCauseList, ranNasRelCause);
     }
