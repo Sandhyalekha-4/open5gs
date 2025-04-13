@@ -353,9 +353,9 @@ ogs_sbi_request_t *smf_npcf_smpolicycontrol_build_delete(
 
     memset(&ueLocation, 0, sizeof(ueLocation));
 
-    if (sess->release_data.gmm_cause ||
-        sess->release_data.gsm_cause ||
-        sess->release_data.ngap_cause.group) {
+    if (sess->nsmf_param.gmm_cause ||
+        sess->nsmf_param.gsm_cause ||
+        sess->nsmf_param.ngap_cause.group) {
 
         ranNasRelCauseList = OpenAPI_list_create();
         if (!ranNasRelCauseList) {
@@ -369,7 +369,7 @@ ogs_sbi_request_t *smf_npcf_smpolicycontrol_build_delete(
             goto end;
         }
 
-        if (sess->release_data.ngap_cause.group) {
+        if (sess->nsmf_param.ngap_cause.group) {
             OpenAPI_ng_ap_cause_t *ngApCause = NULL;
 
             ranNasRelCause->ng_ap_cause = ngApCause =
@@ -381,23 +381,23 @@ ogs_sbi_request_t *smf_npcf_smpolicycontrol_build_delete(
                 goto end;
             }
 
-            ngApCause->group = sess->release_data.ngap_cause.group;
-            ngApCause->value = sess->release_data.ngap_cause.value;
+            ngApCause->group = sess->nsmf_param.ngap_cause.group;
+            ngApCause->value = sess->nsmf_param.ngap_cause.value;
         }
 
-        if (sess->release_data.gmm_cause) {
+        if (sess->nsmf_param.gmm_cause) {
             ranNasRelCause->is__5g_mm_cause = true;
-            ranNasRelCause->_5g_mm_cause = sess->release_data.gmm_cause;
+            ranNasRelCause->_5g_mm_cause = sess->nsmf_param.gmm_cause;
         }
-        if (sess->release_data.gsm_cause) {
+        if (sess->nsmf_param.gsm_cause) {
             ranNasRelCause->is__5g_sm_cause = true;
-            ranNasRelCause->_5g_sm_cause = sess->release_data.gsm_cause;
+            ranNasRelCause->_5g_sm_cause = sess->nsmf_param.gsm_cause;
         }
 
         OpenAPI_list_add(ranNasRelCauseList, ranNasRelCause);
     }
 
-    if (sess->release_data.ue_location) {
+    if (sess->nsmf_param.ue_location) {
         ueLocation.nr_location = ogs_sbi_build_nr_location(
                 &sess->nr_tai, &sess->nr_cgi);
         if (!ueLocation.nr_location) {
@@ -413,7 +413,7 @@ ogs_sbi_request_t *smf_npcf_smpolicycontrol_build_delete(
 
         SmPolicyDeleteData.user_location_info = &ueLocation;
     }
-    if (sess->release_data.ue_timezone) {
+    if (sess->nsmf_param.ue_timezone) {
         SmPolicyDeleteData.ue_time_zone =
             ogs_sbi_timezone_string(ogs_timezone());
         if (!SmPolicyDeleteData.ue_time_zone) {

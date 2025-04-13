@@ -527,8 +527,7 @@ static void reselect_upf(ogs_pfcp_node_t *node)
                         ogs_info("[%s:%d] SMF-initiated Deletion",
                                 smf_ue->supi, sess->psi);
                         ogs_assert(sess->sm_context_ref);
-                        memset(&sess->release_data, 0,
-                                sizeof(sess->release_data));
+                        memset(&sess->nsmf_param, 0, sizeof(sess->nsmf_param));
                         r = smf_sbi_discover_and_send(
                                 OGS_SBI_SERVICE_TYPE_NPCF_SMPOLICYCONTROL, NULL,
                                 smf_npcf_smpolicycontrol_build_delete,

@@ -772,7 +772,7 @@ bool smf_npcf_smpolicycontrol_handle_terminate_notify(
     ogs_assert(true == ogs_sbi_send_http_status_no_content(stream));
 
     if (PCF_SM_POLICY_ASSOCIATED(sess)) {
-        memset(&sess->release_data, 0, sizeof(sess->release_data));
+        memset(&sess->nsmf_param, 0, sizeof(sess->nsmf_param));
         r = smf_sbi_discover_and_send(
                 OGS_SBI_SERVICE_TYPE_NPCF_SMPOLICYCONTROL, NULL,
                 smf_npcf_smpolicycontrol_build_delete,

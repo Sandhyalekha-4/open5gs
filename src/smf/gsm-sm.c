@@ -315,7 +315,7 @@ void smf_gsm_state_initial(ogs_fsm_t *s, smf_event_t *e)
                     OGS_FSM_TRAN(s, smf_gsm_state_exception);
                     break;
                 DEFAULT
-                    if (smf_nsmf_handle_create_pdu_session_in_hsmf(
+                    if (smf_nsmf_handle_create_data_in_hsmf(
                             sess, stream, sbi_message) == false) {
                         ogs_error(
                                 "smf_nsmf_handle_create_pdu_session_in_hsmf() "
@@ -1044,27 +1044,63 @@ void smf_gsm_state_operational(ogs_fsm_t *s, smf_event_t *e)
 
         SWITCH(sbi_message->h.service.name)
         CASE(OGS_SBI_SERVICE_NAME_NSMF_PDUSESSION)
-            SWITCH(sbi_message->h.resource.component[2])
-            CASE(OGS_SBI_RESOURCE_NAME_MODIFY)
-                smf_nsmf_handle_update_sm_context(sess, stream, sbi_message);
-                break;
-            CASE(OGS_SBI_RESOURCE_NAME_RELEASE)
-                smf_nsmf_handle_release_data(sess, stream, sbi_message);
+            SWITCH(sbi_message->h.resource.component[0])
+            CASE(OGS_SBI_RESOURCE_NAME_SM_CONTEXTS)
+                SWITCH(sbi_message->h.resource.component[2])
+                CASE(OGS_SBI_RESOURCE_NAME_MODIFY)
+                    smf_nsmf_handle_update_sm_context(
+                            sess, stream, sbi_message);
+                    break;
+                CASE(OGS_SBI_RESOURCE_NAME_RELEASE)
+                    smf_nsmf_handle_release_sm_context(
+                            sess, stream, sbi_message);
 
-                if (HOME_ROUTED_ROAMING_IN_VSMF(sess)) {
-                    ogs_info("[%s:%d] Session Release in HR Roaming(V-SMF)",
-                            smf_ue->supi, sess->psi);
-                    OGS_FSM_TRAN(s, smf_gsm_state_wait_pfcp_deletion);
-                }
+                    if (HOME_ROUTED_ROAMING_IN_VSMF(sess)) {
+                        ogs_info("[%s:%d] Session Release in HR Roaming(V-SMF)",
+                                smf_ue->supi, sess->psi);
+                        OGS_FSM_TRAN(s, smf_gsm_state_wait_pfcp_deletion);
+                    }
+                    break;
+                DEFAULT
+                    ogs_error("Invalid resource name [%s]",
+                                sbi_message->h.resource.component[2]);
+                    ogs_assert(true ==
+                        ogs_sbi_server_send_error(stream,
+                            OGS_SBI_HTTP_STATUS_BAD_REQUEST, sbi_message,
+                            "Invalid resource name [%s]",
+                            sbi_message->h.resource.component[2], NULL));
+                    OGS_FSM_TRAN(s, smf_gsm_state_exception);
+                END
+                break;
+            CASE(OGS_SBI_RESOURCE_NAME_PDU_SESSIONS)
+                SWITCH(sbi_message->h.resource.component[2])
+                CASE(OGS_SBI_RESOURCE_NAME_MODIFY)
+                    smf_nsmf_handle_update_data_in_hsmf(
+                            sess, stream, sbi_message);
+                    break;
+                CASE(OGS_SBI_RESOURCE_NAME_RELEASE)
+                    smf_nsmf_handle_release_data_in_hsmf(
+                            sess, stream, sbi_message);
+                    break;
+                DEFAULT
+                    ogs_error("Invalid resource name [%s]",
+                                sbi_message->h.resource.component[2]);
+                    ogs_assert(true ==
+                        ogs_sbi_server_send_error(stream,
+                            OGS_SBI_HTTP_STATUS_BAD_REQUEST, sbi_message,
+                            "Invalid resource name [%s]",
+                            sbi_message->h.resource.component[2], NULL));
+                    OGS_FSM_TRAN(s, smf_gsm_state_exception);
+                END
                 break;
             DEFAULT
                 ogs_error("Invalid resource name [%s]",
-                            sbi_message->h.resource.component[2]);
+                            sbi_message->h.resource.component[0]);
                 ogs_assert(true ==
                     ogs_sbi_server_send_error(stream,
                         OGS_SBI_HTTP_STATUS_BAD_REQUEST, sbi_message,
                         "Invalid resource name [%s]",
-                        sbi_message->h.resource.component[2], NULL));
+                        sbi_message->h.resource.component[0], NULL));
                 OGS_FSM_TRAN(s, smf_gsm_state_exception);
             END
             break;
@@ -1266,12 +1302,12 @@ void smf_gsm_state_operational(ogs_fsm_t *s, smf_event_t *e)
             break;
 
         case OGS_NAS_5GS_PDU_SESSION_RELEASE_REQUEST:
-            memset(&sess->release_data, 0, sizeof(sess->release_data));
+            memset(&sess->nsmf_param, 0, sizeof(sess->nsmf_param));
 
-            sess->release_data.gsm_cause =
+            sess->nsmf_param.gsm_cause =
                 OGS_5GSM_CAUSE_REGULAR_DEACTIVATION;
-            sess->release_data.ngap_cause.group = NGAP_Cause_PR_nas;
-            sess->release_data.ngap_cause.value =
+            sess->nsmf_param.ngap_cause.group = NGAP_Cause_PR_nas;
+            sess->nsmf_param.ngap_cause.value =
                 NGAP_CauseNas_normal_release;
 
             trigger = OGS_PFCP_DELETE_TRIGGER_UE_REQUESTED;
@@ -1871,10 +1907,10 @@ void smf_gsm_state_wait_5gc_n1_n2_release(ogs_fsm_t *s, smf_event_t *e)
                 smf_nsmf_handle_update_sm_context(sess, stream, sbi_message);
                 break;
             CASE(OGS_SBI_RESOURCE_NAME_RELEASE)
-                smf_nsmf_handle_release_data(sess, stream, sbi_message);
+                smf_nsmf_handle_release_sm_context(sess, stream, sbi_message);
 
                 if (HOME_ROUTED_ROAMING_IN_VSMF(sess)) {
-                    ogs_info("[%s:%d] SMContextRelease HR Roaming in V-SMF",
+                    ogs_info("[%s:%d] Session Release HR Roaming in V-SMF",
                             smf_ue->supi, sess->psi);
                     OGS_FSM_TRAN(s, smf_gsm_state_wait_pfcp_deletion);
                 }
@@ -2149,10 +2185,10 @@ void smf_gsm_state_5gc_n1_n2_reject(ogs_fsm_t *s, smf_event_t *e)
         if (PCF_SM_POLICY_ASSOCIATED(sess)) {
             int r = 0;
 
-            memset(&sess->release_data, 0, sizeof(sess->release_data));
+            memset(&sess->nsmf_param, 0, sizeof(sess->nsmf_param));
 
-            sess->release_data.ue_location = true;
-            sess->release_data.ue_timezone = true;
+            sess->nsmf_param.ue_location = true;
+            sess->nsmf_param.ue_timezone = true;
 
             r = smf_sbi_discover_and_send(
                     OGS_SBI_SERVICE_TYPE_NPCF_SMPOLICYCONTROL, NULL,

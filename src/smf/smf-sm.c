@@ -1061,7 +1061,7 @@ void smf_state_operational(ogs_fsm_t *s, smf_event_t *e)
                                 sess, stream, state));
                         break;
                     DEFAULT
-                        if (smf_nsmf_handle_create_pdu_session_in_vsmf(
+                        if (smf_nsmf_handle_create_data_in_vsmf(
                                     sess, &sbi_message) == false) {
                             ogs_error("[%s:%d] create_pdu_session "
                                     "failed() [%d]",

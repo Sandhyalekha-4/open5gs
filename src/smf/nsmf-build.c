@@ -333,6 +333,93 @@ end:
     return request;
 }
 
+ogs_sbi_request_t *smf_nsmf_pdusession_build_update_request(
+        smf_sess_t *sess, void *data)
+{
+    ogs_sbi_message_t message;
+    ogs_sbi_request_t *request = NULL;
+
+    smf_ue_t *smf_ue = NULL;
+
+    OpenAPI_hsmf_update_data_t HsmfUpdateData;
+    OpenAPI_ng_ap_cause_t ngApCause;
+    OpenAPI_user_location_t ueLocation;
+
+    ogs_assert(sess);
+    smf_ue = smf_ue_find_by_id(sess->smf_ue_id);
+    ogs_assert(smf_ue);
+
+    memset(&message, 0, sizeof(message));
+    message.h.method = (char *)OGS_SBI_HTTP_METHOD_POST;
+    ogs_assert(sess->h_smf_uri);
+    message.h.uri = ogs_msprintf("%s/%s",
+            sess->pdu_session_resource_uri, OGS_SBI_RESOURCE_NAME_MODIFY);
+    ogs_assert(message.h.uri);
+
+    memset(&HsmfUpdateData, 0, sizeof(HsmfUpdateData));
+    memset(&ngApCause, 0, sizeof(ngApCause));
+    memset(&ueLocation, 0, sizeof(ueLocation));
+
+    HsmfUpdateData.request_indication =
+        OpenAPI_request_indication_UE_REQ_PDU_SES_REL;
+
+    HsmfUpdateData.cause = sess->nsmf_param.cause;
+
+    if (sess->nsmf_param.ngap_cause.group) {
+        HsmfUpdateData.ng_ap_cause = &ngApCause;
+        ngApCause.group = sess->nsmf_param.ngap_cause.group;
+        ngApCause.value = sess->nsmf_param.ngap_cause.value;
+    }
+
+    if (sess->nsmf_param.gmm_cause) {
+        HsmfUpdateData.is__5g_mm_cause_value = true;
+        HsmfUpdateData._5g_mm_cause_value = sess->nsmf_param.gmm_cause;
+    }
+
+    if (sess->nsmf_param.ue_location) {
+        ueLocation.nr_location = ogs_sbi_build_nr_location(
+                &sess->nr_tai, &sess->nr_cgi);
+        if (!ueLocation.nr_location) {
+            ogs_error("No ueLocation.nr_location");
+            goto end;
+        }
+        ueLocation.nr_location->ue_location_timestamp =
+            ogs_sbi_gmtime_string(sess->ue_location_timestamp);
+        if (!ueLocation.nr_location->ue_location_timestamp) {
+            ogs_error("No ue_location_timestamp");
+            goto end;
+        }
+
+        HsmfUpdateData.ue_location = &ueLocation;
+    }
+    if (sess->nsmf_param.ue_timezone) {
+        HsmfUpdateData.ue_time_zone = ogs_sbi_timezone_string(ogs_timezone());
+        if (!HsmfUpdateData.ue_time_zone) {
+            ogs_error("No ue_time_zone");
+            goto end;
+        }
+    }
+
+    message.HsmfUpdateData = &HsmfUpdateData;
+
+    request = ogs_sbi_build_request(&message);
+    ogs_expect(request);
+
+end:
+    if (message.h.uri)
+        ogs_free(message.h.uri);
+
+    if (ueLocation.nr_location) {
+        if (ueLocation.nr_location->ue_location_timestamp)
+            ogs_free(ueLocation.nr_location->ue_location_timestamp);
+        ogs_sbi_free_nr_location(ueLocation.nr_location);
+    }
+    if (HsmfUpdateData.ue_time_zone)
+        ogs_free(HsmfUpdateData.ue_time_zone);
+
+    return request;
+}
+
 ogs_sbi_request_t *smf_nsmf_pdusession_build_release_request(
         smf_sess_t *sess, void *data)
 {
@@ -360,20 +447,20 @@ ogs_sbi_request_t *smf_nsmf_pdusession_build_release_request(
     memset(&ngApCause, 0, sizeof(ngApCause));
     memset(&ueLocation, 0, sizeof(ueLocation));
 
-    ReleaseData.cause = sess->release_data.cause;
+    ReleaseData.cause = sess->nsmf_param.cause;
 
-    if (sess->release_data.ngap_cause.group) {
+    if (sess->nsmf_param.ngap_cause.group) {
         ReleaseData.ng_ap_cause = &ngApCause;
-        ngApCause.group = sess->release_data.ngap_cause.group;
-        ngApCause.value = sess->release_data.ngap_cause.value;
+        ngApCause.group = sess->nsmf_param.ngap_cause.group;
+        ngApCause.value = sess->nsmf_param.ngap_cause.value;
     }
 
-    if (sess->release_data.gmm_cause) {
+    if (sess->nsmf_param.gmm_cause) {
         ReleaseData.is__5g_mm_cause_value = true;
-        ReleaseData._5g_mm_cause_value = sess->release_data.gmm_cause;
+        ReleaseData._5g_mm_cause_value = sess->nsmf_param.gmm_cause;
     }
 
-    if (sess->release_data.ue_location) {
+    if (sess->nsmf_param.ue_location) {
         ueLocation.nr_location = ogs_sbi_build_nr_location(
                 &sess->nr_tai, &sess->nr_cgi);
         if (!ueLocation.nr_location) {
@@ -389,7 +476,7 @@ ogs_sbi_request_t *smf_nsmf_pdusession_build_release_request(
 
         ReleaseData.ue_location = &ueLocation;
     }
-    if (sess->release_data.ue_timezone) {
+    if (sess->nsmf_param.ue_timezone) {
         ReleaseData.ue_time_zone = ogs_sbi_timezone_string(ogs_timezone());
         if (!ReleaseData.ue_time_zone) {
             ogs_error("No ue_time_zone");

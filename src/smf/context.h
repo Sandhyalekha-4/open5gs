@@ -64,7 +64,7 @@ typedef struct smf_ctf_config_s {
 
 int smf_ctf_config_init(smf_ctf_config_t *ctf_config);
 
-typedef struct smf_release_data_s {
+typedef struct smf_nsmf_pdusession_param_s {
     OpenAPI_cause_e cause;
 
     struct {
@@ -80,7 +80,7 @@ typedef struct smf_release_data_s {
         uint8_t ue_timezone:1;,
         uint8_t spare:6;)
     };
-} smf_release_data_t;
+} smf_nsmf_pdusession_param_t;
 
 typedef struct smf_context_s {
     smf_ctf_config_t    ctf_config;
@@ -603,8 +603,7 @@ typedef struct smf_sess_s {
     bool n1_released;
     bool n2_released;
 
-    /* SmContextReleaseData */
-    smf_release_data_t release_data;
+    smf_nsmf_pdusession_param_t nsmf_param;
 
 } smf_sess_t;
 
