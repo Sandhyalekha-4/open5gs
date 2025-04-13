@@ -2051,7 +2051,87 @@ bool smf_nsmf_handle_create_data_in_vsmf(
 bool smf_nsmf_handle_update_data_in_hsmf(
     smf_sess_t *sess, ogs_sbi_stream_t *stream, ogs_sbi_message_t *message)
 {
-    ogs_fatal("Not implekmented");
+    int r, trigger;
+    smf_ue_t *smf_ue = NULL;
+
+    OpenAPI_hsmf_update_data_t *HsmfUpdateData = NULL;
+
+    ogs_assert(stream);
+    ogs_assert(message);
+    ogs_assert(sess);
+    smf_ue = smf_ue_find_by_id(sess->smf_ue_id);
+    ogs_assert(smf_ue);
+
+    memset(&sess->nsmf_param, 0, sizeof(sess->nsmf_param));
+
+    HsmfUpdateData = message->HsmfUpdateData;
+    if (HsmfUpdateData) {
+        if (HsmfUpdateData->ue_location &&
+            HsmfUpdateData->ue_location->nr_location) {
+            OpenAPI_nr_location_t *NrLocation =
+                HsmfUpdateData->ue_location->nr_location;
+            if (NrLocation->tai &&
+                NrLocation->tai->plmn_id && NrLocation->tai->tac &&
+                NrLocation->ncgi &&
+                NrLocation->ncgi->plmn_id && NrLocation->ncgi->nr_cell_id) {
+
+                ogs_sbi_parse_nr_location(
+                        &sess->nr_tai, &sess->nr_cgi, NrLocation);
+                if (NrLocation->ue_location_timestamp)
+                    ogs_sbi_time_from_string(&sess->ue_location_timestamp,
+                            NrLocation->ue_location_timestamp);
+
+                ogs_debug("    TAI[PLMN_ID:%06x,TAC:%d]",
+                    ogs_plmn_id_hexdump(&sess->nr_tai.plmn_id),
+                    sess->nr_tai.tac.v);
+                ogs_debug("    NR_CGI[PLMN_ID:%06x,CELL_ID:0x%llx]",
+                    ogs_plmn_id_hexdump(&sess->nr_cgi.plmn_id),
+                    (long long)sess->nr_cgi.cell_id);
+            }
+
+            sess->nsmf_param.ue_location = true;
+            sess->nsmf_param.ue_timezone = true;
+        }
+
+        if (HsmfUpdateData->ng_ap_cause) {
+            sess->nsmf_param.ngap_cause.group =
+                HsmfUpdateData->ng_ap_cause->group;
+            sess->nsmf_param.ngap_cause.value =
+                HsmfUpdateData->ng_ap_cause->value;
+        }
+        sess->nsmf_param.gmm_cause = HsmfUpdateData->_5g_mm_cause_value;
+        sess->nsmf_param.cause = HsmfUpdateData->cause;
+    }
+
+    trigger = OGS_PFCP_DELETE_TRIGGER_UE_REQUESTED;
+
+    if (PCF_SM_POLICY_ASSOCIATED(sess)) {
+        r = smf_sbi_discover_and_send(
+                OGS_SBI_SERVICE_TYPE_NPCF_SMPOLICYCONTROL, NULL,
+                smf_npcf_smpolicycontrol_build_delete,
+                sess, stream, trigger, NULL);
+        ogs_expect(r == OGS_OK);
+        ogs_assert(r != OGS_ERROR);
+    } else if (UDM_SDM_SUBSCRIBED(sess)) {
+        ogs_warn("[%s:%d] No PolicyAssociationId. Forcibly remove SESSION",
+                smf_ue->supi, sess->psi);
+        r = smf_sbi_discover_and_send(
+                OGS_SBI_SERVICE_TYPE_NUDM_SDM, NULL,
+                smf_nudm_sdm_build_subscription_delete, sess, stream,
+                SMF_UECM_STATE_DEREGISTERED_BY_AMF, NULL);
+        ogs_expect(r == OGS_OK);
+        ogs_assert(r != OGS_ERROR);
+    } else {
+        ogs_warn("[%s:%d] No UDM Subscription. Forcibly remove SESSION",
+                smf_ue->supi, sess->psi);
+        r = smf_sbi_discover_and_send(
+                OGS_SBI_SERVICE_TYPE_NUDM_UECM, NULL,
+                smf_nudm_uecm_build_deregistration, sess, stream,
+                SMF_UECM_STATE_DEREGISTERED_BY_AMF, NULL);
+        ogs_expect(r == OGS_OK);
+        ogs_assert(r != OGS_ERROR);
+    }
+
     return true;
 }
 

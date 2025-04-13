@@ -881,6 +881,7 @@ void smf_state_operational(ogs_fsm_t *s, smf_event_t *e)
         CASE(OGS_SBI_SERVICE_NAME_NUDM_SDM)
         CASE(OGS_SBI_SERVICE_NAME_NPCF_SMPOLICYCONTROL)
         CASE(OGS_SBI_SERVICE_NAME_NAMF_COMM)
+        CASE(OGS_SBI_SERVICE_NAME_NSMF_PDUSESSION)
             sbi_xact_id = OGS_POINTER_TO_UINT(e->h.sbi.data);
             ogs_assert(sbi_xact_id >= OGS_MIN_POOL_ID &&
                     sbi_xact_id <= OGS_MAX_POOL_ID);
@@ -1009,80 +1010,6 @@ void smf_state_operational(ogs_fsm_t *s, smf_event_t *e)
                 SMF_SESS_CLEAR(sess);
             }
 
-            break;
-
-        CASE(OGS_SBI_SERVICE_NAME_NSMF_PDUSESSION)
-            SWITCH(sbi_message.h.resource.component[0])
-            CASE(OGS_SBI_RESOURCE_NAME_PDU_SESSIONS)
-                SWITCH(sbi_message.h.method)
-                CASE(OGS_SBI_HTTP_METHOD_POST)
-                    sbi_xact_id = OGS_POINTER_TO_UINT(e->h.sbi.data);
-                    ogs_assert(sbi_xact_id >= OGS_MIN_POOL_ID &&
-                            sbi_xact_id <= OGS_MAX_POOL_ID);
-
-                    sbi_xact = ogs_sbi_xact_find_by_id(sbi_xact_id);
-                    if (!sbi_xact) {
-                        /* CLIENT_WAIT timer could remove SBI transaction
-                         * before receiving SBI message */
-                        ogs_error(
-                                "SBI transaction has already been removed [%d]",
-                                sbi_xact_id);
-                        break;
-                    }
-
-                    sbi_object_id = sbi_xact->sbi_object_id;
-                    ogs_assert(sbi_object_id >= OGS_MIN_POOL_ID &&
-                            sbi_object_id <= OGS_MAX_POOL_ID);
-
-                    if (sbi_xact->assoc_stream_id >= OGS_MIN_POOL_ID &&
-                        sbi_xact->assoc_stream_id <= OGS_MAX_POOL_ID)
-                        stream = ogs_sbi_stream_find_by_id(
-                                sbi_xact->assoc_stream_id);
-
-                    state = sbi_xact->state;
-
-                    ogs_sbi_xact_remove(sbi_xact);
-
-                    sess = smf_sess_find_by_id(sbi_object_id);
-                    if (!sess) {
-                        ogs_error("Session has already been removed");
-                        break;
-                    }
-                    smf_ue = smf_ue_find_by_id(sess->smf_ue_id);
-                    ogs_assert(smf_ue);
-
-                    SWITCH(sbi_message.h.resource.component[2])
-                    CASE(OGS_SBI_RESOURCE_NAME_MODIFY)
-                        ogs_error("Not Implemented");
-                        break;
-                    CASE(OGS_SBI_RESOURCE_NAME_RELEASE)
-                        ogs_assert(OGS_OK ==
-                            smf_5gc_pfcp_send_session_deletion_request(
-                                sess, stream, state));
-                        break;
-                    DEFAULT
-                        if (smf_nsmf_handle_create_data_in_vsmf(
-                                    sess, &sbi_message) == false) {
-                            ogs_error("[%s:%d] create_pdu_session "
-                                    "failed() [%d]",
-                                    smf_ue->supi, sess->psi,
-                                    sbi_message.res_status);
-                            SMF_SESS_CLEAR(sess);
-                        }
-                    END
-                    break;
-
-                DEFAULT
-                    ogs_error("Invalid HTTP method [%s]", sbi_message.h.method);
-                    ogs_assert_if_reached();
-                END
-                break;
-
-            DEFAULT
-                ogs_error("Invalid resource name [%s]",
-                        sbi_message.h.resource.component[0]);
-                ogs_assert_if_reached();
-            END
             break;
 
         DEFAULT

@@ -1054,12 +1054,6 @@ void smf_gsm_state_operational(ogs_fsm_t *s, smf_event_t *e)
                 CASE(OGS_SBI_RESOURCE_NAME_RELEASE)
                     smf_nsmf_handle_release_sm_context(
                             sess, stream, sbi_message);
-
-                    if (HOME_ROUTED_ROAMING_IN_VSMF(sess)) {
-                        ogs_info("[%s:%d] Session Release in HR Roaming(V-SMF)",
-                                smf_ue->supi, sess->psi);
-                        OGS_FSM_TRAN(s, smf_gsm_state_wait_pfcp_deletion);
-                    }
                     break;
                 DEFAULT
                     ogs_error("Invalid resource name [%s]",
@@ -1258,6 +1252,49 @@ void smf_gsm_state_operational(ogs_fsm_t *s, smf_event_t *e)
             DEFAULT
                 ogs_error("[%s:%d] Invalid resource name [%s]",
                         smf_ue->supi, sess->psi,
+                        sbi_message->h.resource.component[0]);
+                ogs_assert_if_reached();
+            END
+            break;
+
+        CASE(OGS_SBI_SERVICE_NAME_NSMF_PDUSESSION)
+            stream_id = OGS_POINTER_TO_UINT(e->h.sbi.data);
+            if (stream_id >= OGS_MIN_POOL_ID && stream_id <= OGS_MAX_POOL_ID)
+                stream = ogs_sbi_stream_find_by_id(stream_id);
+
+            state = e->h.sbi.state;
+
+            SWITCH(sbi_message->h.resource.component[0])
+            CASE(OGS_SBI_RESOURCE_NAME_PDU_SESSIONS)
+                SWITCH(sbi_message->h.method)
+                CASE(OGS_SBI_HTTP_METHOD_POST)
+                    SWITCH(sbi_message->h.resource.component[2])
+                    CASE(OGS_SBI_RESOURCE_NAME_MODIFY)
+                    CASE(OGS_SBI_RESOURCE_NAME_RELEASE)
+                        OGS_FSM_TRAN(&sess->sm,
+                                &smf_gsm_state_wait_pfcp_deletion);
+                        break;
+                    DEFAULT
+                        if (smf_nsmf_handle_create_data_in_vsmf(
+                                    sess, sbi_message) == false) {
+                            ogs_error("[%s:%d] create_pdu_session "
+                                    "failed() [%d]",
+                                    smf_ue->supi, sess->psi,
+                                    sbi_message->res_status);
+                            OGS_FSM_TRAN(s, smf_gsm_state_exception);
+                        }
+                    END
+                    break;
+
+                DEFAULT
+                    ogs_error("Invalid HTTP method [%s]",
+                            sbi_message->h.method);
+                    ogs_assert_if_reached();
+                END
+                break;
+
+            DEFAULT
+                ogs_error("Invalid resource name [%s]",
                         sbi_message->h.resource.component[0]);
                 ogs_assert_if_reached();
             END
@@ -1532,7 +1569,7 @@ void smf_gsm_state_wait_pfcp_deletion(ogs_fsm_t *s, smf_event_t *e)
             ogs_assert(OGS_OK ==
                 smf_epc_pfcp_send_session_deletion_request(
                     sess, gtp_xact ? gtp_xact->id : OGS_INVALID_POOL_ID));
-        } else if (!HOME_ROUTED_ROAMING_IN_VSMF(sess)) {
+        } else {
             /* 5GC */
             stream_id = OGS_POINTER_TO_UINT(e->h.sbi.data);
             ogs_assert(stream_id >= OGS_MIN_POOL_ID &&
@@ -1908,12 +1945,6 @@ void smf_gsm_state_wait_5gc_n1_n2_release(ogs_fsm_t *s, smf_event_t *e)
                 break;
             CASE(OGS_SBI_RESOURCE_NAME_RELEASE)
                 smf_nsmf_handle_release_sm_context(sess, stream, sbi_message);
-
-                if (HOME_ROUTED_ROAMING_IN_VSMF(sess)) {
-                    ogs_info("[%s:%d] Session Release HR Roaming in V-SMF",
-                            smf_ue->supi, sess->psi);
-                    OGS_FSM_TRAN(s, smf_gsm_state_wait_pfcp_deletion);
-                }
                 break;
             DEFAULT
                 ogs_error("Invalid resource name [%s]",
