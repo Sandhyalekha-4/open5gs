@@ -892,7 +892,6 @@ void smf_gsm_state_operational(ogs_fsm_t *s, smf_event_t *e)
     ogs_gtp2_message_t *gtp2_message = NULL;
     uint8_t gtp1_cause, gtp2_cause;
     bool release;
-    int r, trigger;
 
     int state = 0;
 
@@ -1347,7 +1346,7 @@ void smf_gsm_state_operational(ogs_fsm_t *s, smf_event_t *e)
             sess->nsmf_param.ngap_cause.value =
                 NGAP_CauseNas_normal_release;
 
-            trigger = OGS_PFCP_DELETE_TRIGGER_UE_REQUESTED;
+            e->h.sbi.state = OGS_PFCP_DELETE_TRIGGER_UE_REQUESTED;
 
             if (HOME_ROUTED_ROAMING_IN_VSMF(sess)) {
                 ogs_assert(OGS_OK ==
@@ -1355,32 +1354,9 @@ void smf_gsm_state_operational(ogs_fsm_t *s, smf_event_t *e)
                         sess, stream,
                         OGS_PFCP_MODIFY_HOME_ROUTED_ROAMING|
                         OGS_PFCP_MODIFY_UL_ONLY|OGS_PFCP_MODIFY_DEACTIVATE,
-                        trigger, 0));
-            } else if (PCF_SM_POLICY_ASSOCIATED(sess)) {
-                r = smf_sbi_discover_and_send(
-                        OGS_SBI_SERVICE_TYPE_NPCF_SMPOLICYCONTROL, NULL,
-                        smf_npcf_smpolicycontrol_build_delete,
-                        sess, stream, trigger, NULL);
-                ogs_expect(r == OGS_OK);
-                ogs_assert(r != OGS_ERROR);
-            } else if (UDM_SDM_SUBSCRIBED(sess)) {
-                ogs_warn("[%s:%d] No PolicyAssociationId. "
-                        "Forcibly remove SESSION", smf_ue->supi, sess->psi);
-                r = smf_sbi_discover_and_send(
-                    OGS_SBI_SERVICE_TYPE_NUDM_SDM, NULL,
-                    smf_nudm_sdm_build_subscription_delete, sess, stream,
-                    SMF_UECM_STATE_DEREGISTERED_BY_AMF, NULL);
-                ogs_expect(r == OGS_OK);
-                ogs_assert(r != OGS_ERROR);
+                        e->h.sbi.state, 0));
             } else {
-                ogs_warn("[%s:%d] No SDM Subscription. "
-                        "Forcibly remove SESSION", smf_ue->supi, sess->psi);
-                r = smf_sbi_discover_and_send(
-                        OGS_SBI_SERVICE_TYPE_NUDM_UECM, NULL,
-                        smf_nudm_uecm_build_deregistration, sess, stream,
-                        SMF_UECM_STATE_DEREGISTERED_BY_AMF, NULL);
-                ogs_expect(r == OGS_OK);
-                ogs_assert(r != OGS_ERROR);
+                OGS_FSM_TRAN(s, smf_gsm_state_wait_pfcp_deletion);
             }
             break;
 
