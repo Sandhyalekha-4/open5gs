@@ -1909,6 +1909,8 @@ void smf_gsm_state_wait_5gc_n1_n2_release(ogs_fsm_t *s, smf_event_t *e)
     ogs_pool_id_t stream_id = OGS_INVALID_POOL_ID;
     ogs_sbi_message_t *sbi_message = NULL;
 
+    int r, state = 0;
+
     ogs_assert(s);
     ogs_assert(e);
 
@@ -2022,25 +2024,20 @@ void smf_gsm_state_wait_5gc_n1_n2_release(ogs_fsm_t *s, smf_event_t *e)
             break;
 
         CASE(OGS_SBI_SERVICE_NAME_NUDM_SDM)
+            stream_id = OGS_POINTER_TO_UINT(e->h.sbi.data);
+            if (stream_id >= OGS_MIN_POOL_ID && stream_id <= OGS_MAX_POOL_ID)
+                stream = ogs_sbi_stream_find_by_id(stream_id);
+
+            state = e->h.sbi.state;
+
             SWITCH(sbi_message->h.resource.component[1])
             CASE(OGS_SBI_RESOURCE_NAME_SDM_SUBSCRIPTIONS)
                 SWITCH(sbi_message->h.method)
                 CASE(OGS_SBI_HTTP_METHOD_DELETE)
 
-                    if (e->h.sbi.data) {
-                        /* stream is optional here in this case,
-                         * depending on the different code paths */
-                        stream_id = OGS_POINTER_TO_UINT(e->h.sbi.data);
-                        ogs_assert(stream_id >= OGS_MIN_POOL_ID &&
-                                stream_id <= OGS_MAX_POOL_ID);
-
-                        stream = ogs_sbi_stream_find_by_id(stream_id);
-                    }
-                    int state = e->h.sbi.state;
-
                     UDM_SDM_CLEAR(sess);
 
-                    int r = smf_sbi_discover_and_send(
+                    r = smf_sbi_discover_and_send(
                         OGS_SBI_SERVICE_TYPE_NUDM_UECM, NULL,
                         smf_nudm_uecm_build_deregistration,
                         sess, stream, state, NULL);
@@ -2320,6 +2317,8 @@ void smf_gsm_state_5gc_session_will_deregister(ogs_fsm_t *s, smf_event_t *e)
     ogs_pool_id_t stream_id = OGS_INVALID_POOL_ID;
     ogs_sbi_message_t *sbi_message = NULL;
 
+    int r, state = 0;
+
     ogs_assert(s);
     ogs_assert(e);
 
@@ -2383,20 +2382,14 @@ void smf_gsm_state_5gc_session_will_deregister(ogs_fsm_t *s, smf_event_t *e)
         sbi_message = e->h.sbi.message;
         ogs_assert(sbi_message);
 
+        stream_id = OGS_POINTER_TO_UINT(e->h.sbi.data);
+        if (stream_id >= OGS_MIN_POOL_ID && stream_id <= OGS_MAX_POOL_ID)
+            stream = ogs_sbi_stream_find_by_id(stream_id);
+
+        state = e->h.sbi.state;
+
         SWITCH(sbi_message->h.service.name)
         CASE(OGS_SBI_SERVICE_NAME_NUDM_SDM)
-
-            if (e->h.sbi.data) {
-                /* stream is optional here in this case,
-                 * depending on the different code paths */
-                stream_id = OGS_POINTER_TO_UINT(e->h.sbi.data);
-                ogs_assert(stream_id >= OGS_MIN_POOL_ID &&
-                        stream_id <= OGS_MAX_POOL_ID);
-
-                stream = ogs_sbi_stream_find_by_id(stream_id);
-            }
-            int state = e->h.sbi.state;
-
             SWITCH(sbi_message->h.resource.component[1])
             CASE(OGS_SBI_RESOURCE_NAME_SDM_SUBSCRIPTIONS)
                 SWITCH(sbi_message->h.method)
@@ -2404,7 +2397,7 @@ void smf_gsm_state_5gc_session_will_deregister(ogs_fsm_t *s, smf_event_t *e)
 
                     UDM_SDM_CLEAR(sess);
 
-                    int r = smf_sbi_discover_and_send(
+                    r = smf_sbi_discover_and_send(
                         OGS_SBI_SERVICE_TYPE_NUDM_UECM, NULL,
                         smf_nudm_uecm_build_deregistration,
                         sess, stream, state, NULL);
