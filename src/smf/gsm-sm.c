@@ -1049,11 +1049,11 @@ void smf_gsm_state_operational(ogs_fsm_t *s, smf_event_t *e)
                 SWITCH(sbi_message->h.resource.component[2])
                 CASE(OGS_SBI_RESOURCE_NAME_MODIFY)
                     smf_nsmf_handle_update_sm_context(
-                            sess, stream, sbi_message);
+                            s, e, sess, stream, sbi_message);
                     break;
                 CASE(OGS_SBI_RESOURCE_NAME_RELEASE)
                     smf_nsmf_handle_release_sm_context(
-                            sess, stream, sbi_message);
+                            s, e, sess, stream, sbi_message);
                     break;
                 DEFAULT
                     ogs_error("Invalid resource name [%s]",
@@ -1621,7 +1621,7 @@ void smf_gsm_state_wait_pfcp_deletion(ogs_fsm_t *s, smf_event_t *e)
                     OGS_FSM_TRAN(s, smf_gsm_state_wait_epc_auth_release);
                 /* else: free session? */
             } else {
-                int trigger;
+                int r, trigger;
 
                 if (pfcp_xact->assoc_stream_id >= OGS_MIN_POOL_ID &&
                         pfcp_xact->assoc_stream_id <= OGS_MAX_POOL_ID)
@@ -1681,18 +1681,32 @@ void smf_gsm_state_wait_pfcp_deletion(ogs_fsm_t *s, smf_event_t *e)
                             trigger ==
                             OGS_PFCP_DELETE_TRIGGER_AMF_RELEASE_SM_CONTEXT) {
 
-                    if (UDM_SDM_SUBSCRIBED(sess)) {
-                        int r = smf_sbi_discover_and_send(
+                    if (PCF_SM_POLICY_ASSOCIATED(sess)) {
+                        r = smf_sbi_discover_and_send(
+                                OGS_SBI_SERVICE_TYPE_NPCF_SMPOLICYCONTROL, NULL,
+                                smf_npcf_smpolicycontrol_build_delete,
+                                sess, stream, trigger, NULL);
+                        ogs_expect(r == OGS_OK);
+                        ogs_assert(r != OGS_ERROR);
+                    } else if (UDM_SDM_SUBSCRIBED(sess)) {
+                        ogs_warn("[%s:%d] No PolicyAssociationId. "
+                                "Forcibly remove SESSION",
+                                smf_ue->supi, sess->psi);
+                        r = smf_sbi_discover_and_send(
                                 OGS_SBI_SERVICE_TYPE_NUDM_SDM, NULL,
-                                smf_nudm_sdm_build_subscription_delete, sess, stream,
+                                smf_nudm_sdm_build_subscription_delete,
+                                sess, stream,
                                 SMF_UECM_STATE_DEREGISTERED_BY_AMF, NULL);
                         ogs_expect(r == OGS_OK);
                         ogs_assert(r != OGS_ERROR);
-                    }
-                    else {
-                        int r = smf_sbi_discover_and_send(
+                    } else {
+                        ogs_warn("[%s:%d] No UDM Subscription. "
+                                "Forcibly remove SESSION",
+                                smf_ue->supi, sess->psi);
+                        r = smf_sbi_discover_and_send(
                                 OGS_SBI_SERVICE_TYPE_NUDM_UECM, NULL,
-                                smf_nudm_uecm_build_deregistration, sess, stream,
+                                smf_nudm_uecm_build_deregistration,
+                                sess, stream,
                                 SMF_UECM_STATE_DEREGISTERED_BY_AMF, NULL);
                         ogs_expect(r == OGS_OK);
                         ogs_assert(r != OGS_ERROR);
@@ -1943,10 +1957,12 @@ void smf_gsm_state_wait_5gc_n1_n2_release(ogs_fsm_t *s, smf_event_t *e)
         CASE(OGS_SBI_SERVICE_NAME_NSMF_PDUSESSION)
             SWITCH(sbi_message->h.resource.component[2])
             CASE(OGS_SBI_RESOURCE_NAME_MODIFY)
-                smf_nsmf_handle_update_sm_context(sess, stream, sbi_message);
+                smf_nsmf_handle_update_sm_context(
+                        s, e, sess, stream, sbi_message);
                 break;
             CASE(OGS_SBI_RESOURCE_NAME_RELEASE)
-                smf_nsmf_handle_release_sm_context(sess, stream, sbi_message);
+                smf_nsmf_handle_release_sm_context(
+                        s, e, sess, stream, sbi_message);
                 break;
             DEFAULT
                 ogs_error("Invalid resource name [%s]",
@@ -2311,6 +2327,9 @@ void smf_gsm_state_5gc_n1_n2_reject(ogs_fsm_t *s, smf_event_t *e)
 
 void smf_gsm_state_5gc_session_will_deregister(ogs_fsm_t *s, smf_event_t *e)
 {
+    char *strerror = NULL;
+
+    smf_ue_t *smf_ue = NULL;
     smf_sess_t *sess = NULL;
 
     ogs_sbi_stream_t *stream = NULL;
@@ -2382,6 +2401,9 @@ void smf_gsm_state_5gc_session_will_deregister(ogs_fsm_t *s, smf_event_t *e)
         sbi_message = e->h.sbi.message;
         ogs_assert(sbi_message);
 
+        smf_ue = smf_ue_find_by_id(sess->smf_ue_id);
+        ogs_assert(smf_ue);
+
         stream_id = OGS_POINTER_TO_UINT(e->h.sbi.data);
         if (stream_id >= OGS_MIN_POOL_ID && stream_id <= OGS_MAX_POOL_ID)
             stream = ogs_sbi_stream_find_by_id(stream_id);
@@ -2389,6 +2411,100 @@ void smf_gsm_state_5gc_session_will_deregister(ogs_fsm_t *s, smf_event_t *e)
         state = e->h.sbi.state;
 
         SWITCH(sbi_message->h.service.name)
+        CASE(OGS_SBI_SERVICE_NAME_NPCF_SMPOLICYCONTROL)
+            SWITCH(sbi_message->h.resource.component[0])
+            CASE(OGS_SBI_RESOURCE_NAME_SM_POLICIES)
+                if (!sbi_message->h.resource.component[1]) {
+                    ogs_assert(stream);
+                    strerror = ogs_msprintf(
+                            "[%s:%d] HTTP response error [%d]",
+                            smf_ue->supi, sess->psi,
+                            sbi_message->res_status);
+                    ogs_assert(strerror);
+
+                    ogs_error("%s", strerror);
+                    ogs_assert(true ==
+                        ogs_sbi_server_send_error(
+                            stream, sbi_message->res_status,
+                            sbi_message, strerror, NULL,
+                            (sbi_message->ProblemDetails) ?
+                                    sbi_message->ProblemDetails->cause : NULL));
+                    ogs_free(strerror);
+
+                    OGS_FSM_TRAN(s, smf_gsm_state_exception);
+                    break;
+                } else {
+                    SWITCH(sbi_message->h.resource.component[2])
+                    CASE(OGS_SBI_RESOURCE_NAME_DELETE)
+                        PCF_SM_POLICY_CLEAR(sess);
+
+                        if (sbi_message->res_status !=
+                                OGS_SBI_HTTP_STATUS_NO_CONTENT) {
+                            ogs_error("[%s:%d] HTTP response error [%d]",
+                                    smf_ue->supi, sess->psi,
+                                    sbi_message->res_status);
+                            /* In spite of error from PCF, continue with
+                               session teardown, so as to not leave stale
+                               sessions. */
+                        }
+
+                        if (UDM_SDM_SUBSCRIBED(sess)) {
+                            r = smf_sbi_discover_and_send(
+                                OGS_SBI_SERVICE_TYPE_NUDM_SDM, NULL,
+                                smf_nudm_sdm_build_subscription_delete,
+                                sess, stream,
+                                SMF_UECM_STATE_DEREGISTERED_BY_AMF, NULL);
+                            ogs_expect(r == OGS_OK);
+                            ogs_assert(r != OGS_ERROR);
+                        } else {
+                            ogs_warn("[%s:%d] No SDM Subscription. "
+                                    "Forcibly remove SESSION",
+                                    smf_ue->supi, sess->psi);
+                            r = smf_sbi_discover_and_send(
+                                    OGS_SBI_SERVICE_TYPE_NUDM_UECM, NULL,
+                                    smf_nudm_uecm_build_deregistration,
+                                    sess, stream,
+                                    SMF_UECM_STATE_DEREGISTERED_BY_AMF, NULL);
+                            ogs_expect(r == OGS_OK);
+                            ogs_assert(r != OGS_ERROR);
+                        }
+                        break;
+
+                    DEFAULT
+                        strerror = ogs_msprintf("[%s:%d] "
+                                "Unknown resource name [%s]",
+                                smf_ue->supi, sess->psi,
+                                sbi_message->h.resource.component[2]);
+                        ogs_assert(strerror);
+
+                        ogs_error("%s", strerror);
+                        if (stream)
+                            ogs_assert(true ==
+                                ogs_sbi_server_send_error(stream,
+                                    OGS_SBI_HTTP_STATUS_BAD_REQUEST,
+                                    sbi_message, strerror, NULL, NULL));
+                        ogs_free(strerror);
+                        OGS_FSM_TRAN(s, smf_gsm_state_exception);
+                    END
+                }
+                break;
+
+            DEFAULT
+                strerror = ogs_msprintf("[%s:%d] Invalid resource name [%s]",
+                        smf_ue->supi, sess->psi,
+                        sbi_message->h.resource.component[0]);
+                ogs_assert(strerror);
+
+                ogs_error("%s", strerror);
+                ogs_assert(true ==
+                    ogs_sbi_server_send_error(stream,
+                        OGS_SBI_HTTP_STATUS_BAD_REQUEST,
+                        sbi_message, strerror, NULL, NULL));
+                ogs_free(strerror);
+                OGS_FSM_TRAN(s, smf_gsm_state_exception);
+            END
+            break;
+
         CASE(OGS_SBI_SERVICE_NAME_NUDM_SDM)
             SWITCH(sbi_message->h.resource.component[1])
             CASE(OGS_SBI_RESOURCE_NAME_SDM_SUBSCRIPTIONS)
