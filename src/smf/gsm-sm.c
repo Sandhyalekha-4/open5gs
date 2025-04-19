@@ -1657,36 +1657,11 @@ void smf_gsm_state_wait_pfcp_deletion(ogs_fsm_t *s, smf_event_t *e)
                             trigger ==
                             OGS_PFCP_DELETE_TRIGGER_AMF_RELEASE_SM_CONTEXT) {
 
-                    if (PCF_SM_POLICY_ASSOCIATED(sess)) {
-                        r = smf_sbi_discover_and_send(
-                                OGS_SBI_SERVICE_TYPE_NPCF_SMPOLICYCONTROL, NULL,
-                                smf_npcf_smpolicycontrol_build_delete,
-                                sess, stream, trigger, NULL);
-                        ogs_expect(r == OGS_OK);
-                        ogs_assert(r != OGS_ERROR);
-                    } else if (UDM_SDM_SUBSCRIBED(sess)) {
-                        ogs_warn("[%s:%d] No PolicyAssociationId. "
-                                "Forcibly remove SESSION",
-                                smf_ue->supi, sess->psi);
-                        r = smf_sbi_discover_and_send(
-                                OGS_SBI_SERVICE_TYPE_NUDM_SDM, NULL,
-                                smf_nudm_sdm_build_subscription_delete,
-                                sess, stream,
-                                SMF_UECM_STATE_DEREGISTERED_BY_AMF, NULL);
-                        ogs_expect(r == OGS_OK);
-                        ogs_assert(r != OGS_ERROR);
-                    } else {
-                        ogs_warn("[%s:%d] No UDM Subscription. "
-                                "Forcibly remove SESSION",
-                                smf_ue->supi, sess->psi);
-                        r = smf_sbi_discover_and_send(
-                                OGS_SBI_SERVICE_TYPE_NUDM_UECM, NULL,
-                                smf_nudm_uecm_build_deregistration,
-                                sess, stream,
-                                SMF_UECM_STATE_DEREGISTERED_BY_AMF, NULL);
-                        ogs_expect(r == OGS_OK);
-                        ogs_assert(r != OGS_ERROR);
-                    }
+                    r = smf_sbi_cleanup_session(
+                            sess, stream, trigger,
+                            SMF_SBI_CLEANUP_MODE_POLICY_FIRST);
+                    ogs_expect(r == OGS_OK);
+                    ogs_assert(r != OGS_ERROR);
 
                     OGS_FSM_TRAN(s, smf_gsm_state_5gc_session_will_deregister);
 
@@ -2029,12 +2004,12 @@ void smf_gsm_state_wait_5gc_n1_n2_release(ogs_fsm_t *s, smf_event_t *e)
 
                     UDM_SDM_CLEAR(sess);
 
-                    r = smf_sbi_discover_and_send(
-                        OGS_SBI_SERVICE_TYPE_NUDM_UECM, NULL,
-                        smf_nudm_uecm_build_deregistration,
-                        sess, stream, state, NULL);
+                    r = smf_sbi_cleanup_session(
+                            sess, stream, state,
+                            SMF_SBI_CLEANUP_MODE_CONTEXT_ONLY);
                     ogs_expect(r == OGS_OK);
                     ogs_assert(r != OGS_ERROR);
+
                     break;
 
                 DEFAULT
@@ -2117,10 +2092,9 @@ void smf_gsm_state_wait_5gc_n1_n2_release(ogs_fsm_t *s, smf_event_t *e)
 
                 sess->n2_released = true;
                 if ((sess->n1_released) && (sess->n2_released)) {
-                    int r = smf_sbi_discover_and_send(
-                            OGS_SBI_SERVICE_TYPE_NUDM_SDM, NULL,
-                            smf_nudm_sdm_build_subscription_delete, sess, NULL,
-                            SMF_UECM_STATE_DEREGISTERED_BY_N1_N2_RELEASE, NULL);
+                    r = smf_sbi_cleanup_session(
+                            sess, stream, OGS_PFCP_DELETE_TRIGGER_UE_REQUESTED,
+                            SMF_SBI_CLEANUP_MODE_POLICY_FIRST);
                     ogs_expect(r == OGS_OK);
                     ogs_assert(r != OGS_ERROR);
 
@@ -2159,10 +2133,9 @@ void smf_gsm_state_wait_5gc_n1_n2_release(ogs_fsm_t *s, smf_event_t *e)
 
             sess->n1_released = true;
             if ((sess->n1_released) && (sess->n2_released)) {
-                int r = smf_sbi_discover_and_send(
-                        OGS_SBI_SERVICE_TYPE_NUDM_SDM, NULL,
-                        smf_nudm_sdm_build_subscription_delete, sess, NULL,
-                        SMF_UECM_STATE_DEREGISTERED_BY_N1_N2_RELEASE, NULL);
+                r = smf_sbi_cleanup_session(
+                        sess, stream, OGS_PFCP_DELETE_TRIGGER_UE_REQUESTED,
+                        SMF_SBI_CLEANUP_MODE_POLICY_FIRST);
                 ogs_expect(r == OGS_OK);
                 ogs_assert(r != OGS_ERROR);
 
@@ -2424,26 +2397,12 @@ void smf_gsm_state_5gc_session_will_deregister(ogs_fsm_t *s, smf_event_t *e)
                                sessions. */
                         }
 
-                        if (UDM_SDM_SUBSCRIBED(sess)) {
-                            r = smf_sbi_discover_and_send(
-                                OGS_SBI_SERVICE_TYPE_NUDM_SDM, NULL,
-                                smf_nudm_sdm_build_subscription_delete,
-                                sess, stream,
-                                SMF_UECM_STATE_DEREGISTERED_BY_AMF, NULL);
-                            ogs_expect(r == OGS_OK);
-                            ogs_assert(r != OGS_ERROR);
-                        } else {
-                            ogs_warn("[%s:%d] No SDM Subscription. "
-                                    "Forcibly remove SESSION",
-                                    smf_ue->supi, sess->psi);
-                            r = smf_sbi_discover_and_send(
-                                    OGS_SBI_SERVICE_TYPE_NUDM_UECM, NULL,
-                                    smf_nudm_uecm_build_deregistration,
-                                    sess, stream,
-                                    SMF_UECM_STATE_DEREGISTERED_BY_AMF, NULL);
-                            ogs_expect(r == OGS_OK);
-                            ogs_assert(r != OGS_ERROR);
-                        }
+                        r = smf_sbi_cleanup_session(
+                                sess, stream, state,
+                                SMF_SBI_CLEANUP_MODE_SUBSCRIPTION_FIRST);
+                        ogs_expect(r == OGS_OK);
+                        ogs_assert(r != OGS_ERROR);
+
                         break;
 
                     DEFAULT
@@ -2489,12 +2448,12 @@ void smf_gsm_state_5gc_session_will_deregister(ogs_fsm_t *s, smf_event_t *e)
 
                     UDM_SDM_CLEAR(sess);
 
-                    r = smf_sbi_discover_and_send(
-                        OGS_SBI_SERVICE_TYPE_NUDM_UECM, NULL,
-                        smf_nudm_uecm_build_deregistration,
-                        sess, stream, state, NULL);
+                    r = smf_sbi_cleanup_session(
+                            sess, stream, state,
+                            SMF_SBI_CLEANUP_MODE_CONTEXT_ONLY);
                     ogs_expect(r == OGS_OK);
                     ogs_assert(r != OGS_ERROR);
+
                     break;
 
                 DEFAULT

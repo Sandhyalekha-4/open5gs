@@ -104,6 +104,28 @@ void smf_sbi_send_sm_context_update_error(
         OpenAPI_n2_sm_info_type_e n2_sm_info_type,
         OpenAPI_up_cnx_state_e up_cnx_state);
 
+/* Cleanup modes for session resources via SBI */
+typedef enum {
+    SMF_SBI_CLEANUP_MODE_POLICY_FIRST = 1,   /* Policy→Subscr→Context */
+    SMF_SBI_CLEANUP_MODE_SUBSCRIPTION_FIRST, /* Subscr→Context */
+    SMF_SBI_CLEANUP_MODE_CONTEXT_ONLY        /* Context only */
+} smf_sbi_cleanup_mode_t;
+
+/**
+ * Send SBI request to clean up session resources.
+ *
+ * @param sess   Session object pointer.
+ * @param stream SBI stream object pointer.
+ * @param state  State code for the cleanup action.
+ * @param mode   Cleanup mode to select the workflow.
+ * @return OGS_OK on success, else OGS_ERROR.
+ */
+int smf_sbi_cleanup_session(
+    smf_sess_t              *sess,
+    ogs_sbi_stream_t        *stream,
+    int                      state,
+    smf_sbi_cleanup_mode_t   mode);
+
 bool smf_sbi_send_sm_context_status_notify(smf_sess_t *sess);
 
 void smf_sbi_send_pdu_session_created_data(

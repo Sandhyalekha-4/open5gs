@@ -2004,7 +2004,7 @@ bool smf_nsmf_handle_create_data_in_vsmf(
 bool smf_nsmf_handle_update_data_in_hsmf(
     smf_sess_t *sess, ogs_sbi_stream_t *stream, ogs_sbi_message_t *message)
 {
-    int r, trigger;
+    int r;
     smf_ue_t *smf_ue = NULL;
 
     OpenAPI_hsmf_update_data_t *HsmfUpdateData = NULL;
@@ -2056,34 +2056,11 @@ bool smf_nsmf_handle_update_data_in_hsmf(
         sess->nsmf_param.cause = HsmfUpdateData->cause;
     }
 
-    trigger = OGS_PFCP_DELETE_TRIGGER_UE_REQUESTED;
-
-    if (PCF_SM_POLICY_ASSOCIATED(sess)) {
-        r = smf_sbi_discover_and_send(
-                OGS_SBI_SERVICE_TYPE_NPCF_SMPOLICYCONTROL, NULL,
-                smf_npcf_smpolicycontrol_build_delete,
-                sess, stream, trigger, NULL);
-        ogs_expect(r == OGS_OK);
-        ogs_assert(r != OGS_ERROR);
-    } else if (UDM_SDM_SUBSCRIBED(sess)) {
-        ogs_warn("[%s:%d] No PolicyAssociationId. Forcibly remove SESSION",
-                smf_ue->supi, sess->psi);
-        r = smf_sbi_discover_and_send(
-                OGS_SBI_SERVICE_TYPE_NUDM_SDM, NULL,
-                smf_nudm_sdm_build_subscription_delete, sess, stream,
-                SMF_UECM_STATE_DEREGISTERED_BY_AMF, NULL);
-        ogs_expect(r == OGS_OK);
-        ogs_assert(r != OGS_ERROR);
-    } else {
-        ogs_warn("[%s:%d] No UDM Subscription. Forcibly remove SESSION",
-                smf_ue->supi, sess->psi);
-        r = smf_sbi_discover_and_send(
-                OGS_SBI_SERVICE_TYPE_NUDM_UECM, NULL,
-                smf_nudm_uecm_build_deregistration, sess, stream,
-                SMF_UECM_STATE_DEREGISTERED_BY_AMF, NULL);
-        ogs_expect(r == OGS_OK);
-        ogs_assert(r != OGS_ERROR);
-    }
+    r = smf_sbi_cleanup_session(
+            sess, stream, OGS_PFCP_DELETE_TRIGGER_UE_REQUESTED,
+            SMF_SBI_CLEANUP_MODE_POLICY_FIRST);
+    ogs_expect(r == OGS_OK);
+    ogs_assert(r != OGS_ERROR);
 
     return true;
 }
@@ -2091,7 +2068,7 @@ bool smf_nsmf_handle_update_data_in_hsmf(
 bool smf_nsmf_handle_release_data_in_hsmf(
     smf_sess_t *sess, ogs_sbi_stream_t *stream, ogs_sbi_message_t *message)
 {
-    int r, trigger;
+    int r;
     smf_ue_t *smf_ue = NULL;
 
     OpenAPI_release_data_t *ReleaseData = NULL;
@@ -2143,34 +2120,11 @@ bool smf_nsmf_handle_release_data_in_hsmf(
         sess->nsmf_param.cause = ReleaseData->cause;
     }
 
-    trigger = OGS_PFCP_DELETE_TRIGGER_AMF_RELEASE_SM_CONTEXT;
-
-    if (PCF_SM_POLICY_ASSOCIATED(sess)) {
-        r = smf_sbi_discover_and_send(
-                OGS_SBI_SERVICE_TYPE_NPCF_SMPOLICYCONTROL, NULL,
-                smf_npcf_smpolicycontrol_build_delete,
-                sess, stream, trigger, NULL);
-        ogs_expect(r == OGS_OK);
-        ogs_assert(r != OGS_ERROR);
-    } else if (UDM_SDM_SUBSCRIBED(sess)) {
-        ogs_warn("[%s:%d] No PolicyAssociationId. Forcibly remove SESSION",
-                smf_ue->supi, sess->psi);
-        r = smf_sbi_discover_and_send(
-                OGS_SBI_SERVICE_TYPE_NUDM_SDM, NULL,
-                smf_nudm_sdm_build_subscription_delete, sess, stream,
-                SMF_UECM_STATE_DEREGISTERED_BY_AMF, NULL);
-        ogs_expect(r == OGS_OK);
-        ogs_assert(r != OGS_ERROR);
-    } else {
-        ogs_warn("[%s:%d] No UDM Subscription. Forcibly remove SESSION",
-                smf_ue->supi, sess->psi);
-        r = smf_sbi_discover_and_send(
-                OGS_SBI_SERVICE_TYPE_NUDM_UECM, NULL,
-                smf_nudm_uecm_build_deregistration, sess, stream,
-                SMF_UECM_STATE_DEREGISTERED_BY_AMF, NULL);
-        ogs_expect(r == OGS_OK);
-        ogs_assert(r != OGS_ERROR);
-    }
+    r = smf_sbi_cleanup_session(
+            sess, stream, OGS_PFCP_DELETE_TRIGGER_AMF_RELEASE_SM_CONTEXT,
+            SMF_SBI_CLEANUP_MODE_POLICY_FIRST);
+    ogs_expect(r == OGS_OK);
+    ogs_assert(r != OGS_ERROR);
 
     return true;
 }

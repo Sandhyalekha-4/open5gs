@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2024 by Sukchan Lee <acetcom@gmail.com>
+ * Copyright (C) 2019-2025 by Sukchan Lee <acetcom@gmail.com>
  *
  * This file is part of Open5GS.
  *
@@ -823,6 +823,98 @@ static int client_notify_cb(
     ogs_sbi_message_free(&message);
     ogs_sbi_response_free(response);
     return OGS_OK;
+}
+
+int smf_sbi_cleanup_session(
+    smf_sess_t              *sess,
+    ogs_sbi_stream_t        *stream,
+    int                      state,
+    smf_sbi_cleanup_mode_t   mode)
+{
+    smf_ue_t *smf_ue = NULL;
+    int r = OGS_ERROR;
+    int udm_state = SMF_UECM_STATE_NONE;
+
+    ogs_assert(mode);
+
+    ogs_assert(sess);
+    smf_ue = smf_ue_find_by_id(sess->smf_ue_id);
+    ogs_assert(smf_ue);
+
+    ogs_assert(state);
+    if (state == OGS_PFCP_DELETE_TRIGGER_AMF_RELEASE_SM_CONTEXT ||
+            state == OGS_PFCP_DELETE_TRIGGER_AMF_UPDATE_SM_CONTEXT)
+        udm_state = SMF_UECM_STATE_DEREGISTERED_BY_AMF;
+    else
+        udm_state = SMF_UECM_STATE_DEREGISTERED_BY_N1_N2_RELEASE;
+
+    switch (mode) {
+    case SMF_SBI_CLEANUP_MODE_POLICY_FIRST:
+        if (PCF_SM_POLICY_ASSOCIATED(sess)) {
+            r = smf_sbi_discover_and_send(
+                OGS_SBI_SERVICE_TYPE_NPCF_SMPOLICYCONTROL,
+                NULL,
+                smf_npcf_smpolicycontrol_build_delete,
+                sess, stream, state, NULL);
+            ogs_expect(r == OGS_OK);
+            ogs_assert(r != OGS_ERROR);
+        } else if (UDM_SDM_SUBSCRIBED(sess)) {
+            ogs_error("[%s:%d] No PolicyAssociationId. Forcibly remove SESSION",
+                    smf_ue->supi, sess->psi);
+            r = smf_sbi_discover_and_send(
+                OGS_SBI_SERVICE_TYPE_NUDM_SDM,
+                NULL,
+                smf_nudm_sdm_build_subscription_delete,
+                sess, stream, state, NULL);
+            ogs_expect(r == OGS_OK);
+            ogs_assert(r != OGS_ERROR);
+        } else {
+            ogs_error("[%s:%d] No UDM Subscription. Forcibly remove SESSION",
+                    smf_ue->supi, sess->psi);
+            r = smf_sbi_discover_and_send(
+                OGS_SBI_SERVICE_TYPE_NUDM_UECM,
+                NULL,
+                smf_nudm_uecm_build_deregistration,
+                sess, stream, udm_state, NULL);
+            ogs_expect(r == OGS_OK);
+            ogs_assert(r != OGS_ERROR);
+        }
+        break;
+
+    case SMF_SBI_CLEANUP_MODE_SUBSCRIPTION_FIRST:
+        if (UDM_SDM_SUBSCRIBED(sess)) {
+            r = smf_sbi_discover_and_send(
+                OGS_SBI_SERVICE_TYPE_NUDM_SDM,
+                NULL,
+                smf_nudm_sdm_build_subscription_delete,
+                sess, stream, state, NULL);
+            ogs_expect(r == OGS_OK);
+            ogs_assert(r != OGS_ERROR);
+        } else {
+            ogs_error("[%s:%d] No UDM Subscription. Forcibly remove SESSION",
+                    smf_ue->supi, sess->psi);
+            r = smf_sbi_discover_and_send(
+                OGS_SBI_SERVICE_TYPE_NUDM_UECM,
+                NULL,
+                smf_nudm_uecm_build_deregistration,
+                sess, stream, udm_state, NULL);
+            ogs_expect(r == OGS_OK);
+            ogs_assert(r != OGS_ERROR);
+        }
+        break;
+
+    case SMF_SBI_CLEANUP_MODE_CONTEXT_ONLY:
+        r = smf_sbi_discover_and_send(
+            OGS_SBI_SERVICE_TYPE_NUDM_UECM,
+            NULL,
+            smf_nudm_uecm_build_deregistration,
+            sess, stream, udm_state, NULL);
+        ogs_expect(r == OGS_OK);
+        ogs_assert(r != OGS_ERROR);
+        break;
+    }
+
+    return r;
 }
 
 bool smf_sbi_send_sm_context_status_notify(smf_sess_t *sess)
