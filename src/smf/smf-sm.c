@@ -1171,6 +1171,16 @@ void smf_state_operational(ogs_fsm_t *s, smf_event_t *e)
         ogs_pkbuf_free(pkbuf);
         break;
 
+    case SMF_EVT_SESSION_RELEASE:
+        sess = smf_sess_find_by_id(e->sess_id);
+        if (!sess) {
+            ogs_error("Session has already been removed");
+            break;
+        }
+
+        ogs_fsm_dispatch(&sess->sm, e);
+        break;
+
     default:
         ogs_error("No handler for event %s", smf_event_get_name(e));
         break;

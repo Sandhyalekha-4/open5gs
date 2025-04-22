@@ -21,6 +21,7 @@
 #include "nas-path.h"
 #include "ngap-path.h"
 #include "pfcp-path.h"
+#include "local-path.h"
 #include "nsmf-handler.h"
 
 bool smf_nsmf_handle_create_sm_context(
@@ -604,8 +605,7 @@ bool smf_nsmf_handle_create_sm_context(
 }
 
 bool smf_nsmf_handle_update_sm_context(
-        ogs_fsm_t *s, smf_event_t *e, smf_sess_t *sess,
-        ogs_sbi_stream_t *stream, ogs_sbi_message_t *message)
+    smf_sess_t *sess, ogs_sbi_stream_t *stream, ogs_sbi_message_t *message)
 {
     int i;
     smf_ue_t *smf_ue = NULL;
@@ -985,10 +985,9 @@ bool smf_nsmf_handle_update_sm_context(
                     ogs_sbi_server_send_response(stream, response));
 
         } else {
-            ogs_assert(s);
-            ogs_assert(e);
-            e->h.sbi.state = OGS_PFCP_DELETE_TRIGGER_AMF_UPDATE_SM_CONTEXT;
-            OGS_FSM_TRAN(s, smf_gsm_state_wait_pfcp_deletion);
+            smf_trigger_session_release(
+                    sess, stream,
+                    OGS_PFCP_DELETE_TRIGGER_AMF_UPDATE_SM_CONTEXT);
         }
     } else if (SmContextUpdateData->serving_nf_id) {
         ogs_debug("Old amf_nf_id: %s, new amf_nf_id: %s",
@@ -1016,8 +1015,7 @@ bool smf_nsmf_handle_update_sm_context(
 }
 
 bool smf_nsmf_handle_release_sm_context(
-        ogs_fsm_t *s, smf_event_t *e, smf_sess_t *sess,
-        ogs_sbi_stream_t *stream, ogs_sbi_message_t *message)
+    smf_sess_t *sess, ogs_sbi_stream_t *stream, ogs_sbi_message_t *message)
 {
     smf_ue_t *smf_ue = NULL;
 
@@ -1079,11 +1077,9 @@ bool smf_nsmf_handle_release_sm_context(
                 OGS_PFCP_MODIFY_UL_ONLY|OGS_PFCP_MODIFY_DEACTIVATE,
                 OGS_PFCP_DELETE_TRIGGER_AMF_RELEASE_SM_CONTEXT, 0));
     } else {
-        ogs_assert(s);
-        ogs_assert(e);
-
-        e->h.sbi.state = OGS_PFCP_DELETE_TRIGGER_AMF_RELEASE_SM_CONTEXT;
-        OGS_FSM_TRAN(s, smf_gsm_state_wait_pfcp_deletion);
+        smf_trigger_session_release(
+                sess, stream,
+                OGS_PFCP_DELETE_TRIGGER_AMF_RELEASE_SM_CONTEXT);
     }
 
     return true;

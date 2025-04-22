@@ -1048,11 +1048,11 @@ void smf_gsm_state_operational(ogs_fsm_t *s, smf_event_t *e)
                 SWITCH(sbi_message->h.resource.component[2])
                 CASE(OGS_SBI_RESOURCE_NAME_MODIFY)
                     smf_nsmf_handle_update_sm_context(
-                            s, e, sess, stream, sbi_message);
+                            sess, stream, sbi_message);
                     break;
                 CASE(OGS_SBI_RESOURCE_NAME_RELEASE)
                     smf_nsmf_handle_release_sm_context(
-                            s, e, sess, stream, sbi_message);
+                            sess, stream, sbi_message);
                     break;
                 DEFAULT
                     ogs_error("Invalid resource name [%s]",
@@ -1494,16 +1494,15 @@ void smf_gsm_state_operational(ogs_fsm_t *s, smf_event_t *e)
         }
         break;
 
-        case SMF_EVT_N4_TIMER:
-            switch (e->h.timer_id) {
-            case SMF_TIMER_PFCP_NO_ESTABLISHMENT_RESPONSE:
-                OGS_FSM_TRAN(s, smf_gsm_state_5gc_n1_n2_reject);
-                break;
-            default:
-                ogs_error("Unknown timer[%s:%d]",
-                        ogs_timer_get_name(e->h.timer_id), e->h.timer_id);
-            }
-            break;
+    case SMF_EVT_SESSION_RELEASE:
+        smf_ue = smf_ue_find_by_id(sess->smf_ue_id);
+        ogs_assert(smf_ue);
+
+        ogs_error("[%s:%d] Session Release [PFCP-Delete-Trigger:%d]",
+            smf_ue->supi, sess->psi, e->h.sbi.state);
+
+        OGS_FSM_TRAN(s, smf_gsm_state_wait_pfcp_deletion);
+        break;
 
     default:
         ogs_error("Unknown event [%s]", smf_event_get_name(e));
@@ -1908,12 +1907,10 @@ void smf_gsm_state_wait_5gc_n1_n2_release(ogs_fsm_t *s, smf_event_t *e)
         CASE(OGS_SBI_SERVICE_NAME_NSMF_PDUSESSION)
             SWITCH(sbi_message->h.resource.component[2])
             CASE(OGS_SBI_RESOURCE_NAME_MODIFY)
-                smf_nsmf_handle_update_sm_context(
-                        s, e, sess, stream, sbi_message);
+                smf_nsmf_handle_update_sm_context(sess, stream, sbi_message);
                 break;
             CASE(OGS_SBI_RESOURCE_NAME_RELEASE)
-                smf_nsmf_handle_release_sm_context(
-                        s, e, sess, stream, sbi_message);
+                smf_nsmf_handle_release_sm_context(sess, stream, sbi_message);
                 break;
             DEFAULT
                 ogs_error("Invalid resource name [%s]",
