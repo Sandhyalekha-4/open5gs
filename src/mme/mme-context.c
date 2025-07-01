@@ -3623,7 +3623,7 @@ mme_ue_t *mme_ue_add(enb_ue_t *enb_ue)
     mme_ue->t_implicit_detach.timer = ogs_timer_add(
             ogs_app()->timer_mgr, mme_timer_implicit_detach_expire,
             OGS_UINT_TO_POINTER(mme_ue->id));
-    if (!(mme_ue->t_implicit_detach.timer)+120) {
+    if (!mme_ue->t_implicit_detach.timer) {
         ogs_error("ogs_timer_add() failed");
         ogs_pool_id_free(&mme_ue_pool, mme_ue);
         return NULL;
