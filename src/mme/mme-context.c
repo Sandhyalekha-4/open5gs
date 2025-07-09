@@ -3812,7 +3812,7 @@ mme_ue_t *mme_ue_find_by_imsi_bcd(const char *imsi_bcd)
 
     ogs_bcd_to_buffer(imsi_bcd, imsi, &imsi_len);
 
-    return mme_ue_find_by_imsi(imsi, imsi_len);
+    return (mme_ue_t *)mme_ue_find_by_imsi(imsi, imsi_len);
 }
 
 mme_ue_t *mme_ue_find_by_imsi(const uint8_t *imsi, int imsi_len)
