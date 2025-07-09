@@ -4084,8 +4084,15 @@ int mme_ue_set_imsi(mme_ue_t *mme_ue, char *imsi_bcd)
             sgw_ue = sgw_ue_find_by_id(mme_ue->sgw_ue_id);
             ogs_assert(sgw_ue);
             old_sgw_ue = sgw_ue_find_by_id(old_mme_ue->sgw_ue_id);
-            ogs_assert(old_sgw_ue);
-            sgw_ue->sgw_s11_teid = old_sgw_ue->sgw_s11_teid;
+            //ogs_assert(old_sgw_ue);
+            if (!old_sgw_ue) {
+                ogs_error("[%s] old_sgw_ue not found for sgw_ue_id=%d",
+                              old_mme_ue->imsi_bcd, old_mme_ue->sgw_ue_id);
+               // return;
+            } else {
+                sgw_ue->sgw_s11_teid = old_sgw_ue->sgw_s11_teid;
+                    }
+            //sgw_ue->sgw_s11_teid = old_sgw_ue->sgw_s11_teid;
 
             mme_ue_remove(old_mme_ue);
         }
