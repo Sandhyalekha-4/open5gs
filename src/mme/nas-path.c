@@ -135,7 +135,7 @@ int nas_eps_send_attach_accept(mme_ue_t *mme_ue)
     if (mme_sess_next(sess)) {
         ogs_error("[%s] There should only be one SESSION sess[%p], [%d]", mme_ue->imsi_bcd, 
               sess, sess->mme_ue_id);
-        return OGS_ERROR;
+           return OGS_ERROR;
     }
 
     ogs_debug("[%s] Attach accept", mme_ue->imsi_bcd);
