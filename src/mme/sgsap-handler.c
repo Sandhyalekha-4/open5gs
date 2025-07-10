@@ -326,6 +326,8 @@ void sgsap_handle_location_update_reject(mme_vlr_t *vlr, ogs_pkbuf_t *pkbuf)
         ogs_expect(r == OGS_OK);
         if(r!=OGS_OK)
         {
+            ogs_error(" IMSI [%s] and EPS-type [%d] Update location reject",  
+                        mme_ue->imsi_bcd, mme_ue->nas_eps.type);
             ogs_assert(r != OGS_ERROR);
         }
         
