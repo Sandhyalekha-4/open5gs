@@ -103,7 +103,11 @@ void esm_state_inactive(ogs_fsm_t *s, mme_event_t *e)
         ogs_assert(message);
 
         enb_ue = enb_ue_find_by_id(mme_ue->enb_ue_id);
-        ogs_assert(enb_ue);
+        if (!enb_ue)
+        {
+             ogs_error("IMSI[%s], enb_ue [%d] ", mme_ue->imsi_bcd, enb_ue);
+            ogs_assert(enb_ue);
+        }
 
         switch (message->esm.h.message_type) {
         case OGS_NAS_EPS_PDN_CONNECTIVITY_REQUEST:
