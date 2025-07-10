@@ -1,4 +1,4 @@
-/*
+nb/*
  * Copyright (C) 2019 by Sukchan Lee <acetcom@gmail.com>
  *
  * This file is part of Open5GS.
@@ -105,7 +105,7 @@ void esm_state_inactive(ogs_fsm_t *s, mme_event_t *e)
         enb_ue = enb_ue_find_by_id(mme_ue->enb_ue_id);
         if (!enb_ue)
         {
-             ogs_error("IMSI[%s], enb_ue [%p],  ", mme_ue->imsi_bcd, enb_ue, mme_ue->enb_ue_id);
+             ogs_error("IMSI[%s], enb_ue [%p], enb_ue id[%d]", mme_ue->imsi_bcd, enb_ue, mme_ue->enb_ue_id);
             ogs_assert(enb_ue);
         }
 
