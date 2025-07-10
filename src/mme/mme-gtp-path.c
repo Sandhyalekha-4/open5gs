@@ -142,7 +142,7 @@ static void timeout(ogs_gtp_xact_t *xact, void *data)
         if (!mme_ue) {
             ogs_error("Session[%d] and MME ue [%d] has been removed [%d]",
                     sess->mme_ue_id, mme_ue_id, type);
-           //ogs_assert(mme_ue);
+           ogs_assert(mme_ue);
         }
         
         break;
