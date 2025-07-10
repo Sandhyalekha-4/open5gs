@@ -139,6 +139,7 @@ static void timeout(ogs_gtp_xact_t *xact, void *data)
             return;
         }
         mme_ue = mme_ue_find_by_id(sess->mme_ue_id);
+        
         ogs_assert(mme_ue);
         break;
     case OGS_GTP2_BEARER_RESOURCE_COMMAND_TYPE:
