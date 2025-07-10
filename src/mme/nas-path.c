@@ -130,10 +130,12 @@ int nas_eps_send_attach_accept(mme_ue_t *mme_ue)
     }
 
     sess = mme_sess_first(mme_ue);
+    ogs_warn("IMSI [%s], sess=%p, next=%p", mme_ue->imsi_bcd, sess, mme_sess_next(sess));
     ogs_assert(sess);
     if (mme_sess_next(sess)) {
-        ogs_error("There should only be one SESSION");
-        return OGS_ERROR;
+        ogs_error("[%s] There should only be one SESSION sess[%p], [%d]", mme_ue->imsi_bcd, 
+              sess, sess->mme_ue_id);
+           return OGS_ERROR;
     }
 
     ogs_debug("[%s] Attach accept", mme_ue->imsi_bcd);
