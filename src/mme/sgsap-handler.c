@@ -324,7 +324,11 @@ void sgsap_handle_location_update_reject(mme_vlr_t *vlr, ogs_pkbuf_t *pkbuf)
     if (mme_ue->nas_eps.type == MME_EPS_TYPE_ATTACH_REQUEST) {
         r = nas_eps_send_attach_accept(mme_ue);
         ogs_expect(r == OGS_OK);
-        ogs_assert(r != OGS_ERROR);
+        if(r!=OGS_OK)
+        {
+            ogs_assert(r != OGS_ERROR);
+        }
+        
     } else if (mme_ue->nas_eps.type == MME_EPS_TYPE_TAU_REQUEST) {
         if (mme_ue->tracking_area_update_request_type ==
                 MME_TAU_TYPE_INITIAL_UE_MESSAGE) {
