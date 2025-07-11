@@ -3778,7 +3778,12 @@ void mme_ue_remove_all(void)
 
 mme_ue_t *mme_ue_find_by_id(ogs_pool_id_t id)
 {
-    return ogs_pool_find_by_id(&mme_ue_pool, id);
+    mme_ue_t *ue = ogs_pool_find_by_id(&mme_ue_pool, id);
+    if (!ue) {
+        ogs_debug("mme_ue_find_by_id(%d) returned NULL", id);
+    }
+    return ue;
+    //return ogs_pool_find_by_id(&mme_ue_pool, id);
 }
 
 void mme_ue_fsm_init(mme_ue_t *mme_ue)
