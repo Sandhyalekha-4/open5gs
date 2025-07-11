@@ -139,6 +139,7 @@ static void timeout(ogs_gtp_xact_t *xact, void *data)
             return;
         }
         mme_ue = mme_ue_find_by_id(sess->mme_ue_id);
+        ogs_info("Looking for mme_ue by id = %d from session id = %d and MME-UE[%d]", sess->mme_ue_id, sess_id, mme_ue_id);
         if (!mme_ue) {
             ogs_error("Session-id[%d], sess_ue_id[%d] and MME-UE [%d] has been removed [%d]",
                     sess_id, sess->mme_ue_id, mme_ue_id, type);
