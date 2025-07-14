@@ -1773,7 +1773,7 @@ void amf_ue_remove(amf_ue_t *amf_ue)
                 ogs_list_count(&amf_ue->sbi.xact_list));
     ogs_sbi_object_free(&amf_ue->sbi);
 
-    amf_ue_deassociate(amf_ue);
+    amf_ue->ran_ue_id = OGS_INVALID_POOL_ID;
 
     ogs_pool_id_free(&amf_ue_pool, amf_ue);
 
