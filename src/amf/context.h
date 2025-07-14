@@ -1014,8 +1014,7 @@ OpenAPI_rat_type_e amf_ue_rat_type(amf_ue_t *amf_ue);
  *   - Delete Indirect Data Forwarding Tunnel Request/Response
  */
 void amf_ue_associate_ran_ue(amf_ue_t *amf_ue, ran_ue_t *ran_ue);
-void ran_ue_deassociate(ran_ue_t *ran_ue);
-void amf_ue_deassociate(amf_ue_t *amf_ue);
+void amf_ue_deassociate_ran_ue(amf_ue_t *amf_ue, ran_ue_t *ran_ue);
 void source_ue_associate_target_ue(ran_ue_t *source_ue, ran_ue_t *target_ue);
 void source_ue_deassociate_target_ue(ran_ue_t *ran_ue);
 
