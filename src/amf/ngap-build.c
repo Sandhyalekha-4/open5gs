@@ -296,7 +296,7 @@ ogs_pkbuf_t *ngap_build_downlink_nas_transport(
      ran_ue_t *ran_ue, amf_ue_t *amf_ue,
      ogs_pkbuf_t *gmmbuf, bool ue_ambr, bool allowed_nssai)
 {
-    amf_ue_t *amf_ue = NULL;
+   // amf_ue_t *amf_ue = NULL;
 
     NGAP_NGAP_PDU_t pdu;
     NGAP_InitiatingMessage_t *initiatingMessage = NULL;
