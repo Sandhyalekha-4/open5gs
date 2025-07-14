@@ -1796,7 +1796,7 @@ void ngap_handle_ue_context_release_action(ran_ue_t *ran_ue)
         } else
             ogs_error("No UE(amf-ue) Context");
 
-        ran_ue_remove(ran_ue);;
+        ran_ue_remove(ran_ue);
 
         break;
 
