@@ -1755,14 +1755,8 @@ void ngap_handle_ue_context_release_action(ran_ue_t *ran_ue)
         break;
     case NGAP_UE_CTX_REL_NG_REMOVE_AND_UNLINK:
         ogs_debug("    Action: NG normal release");
-        ran_ue_remove(ran_ue);
-        if (!amf_ue) {
-            ogs_error("No UE(amf-ue) Context");
-            return;
-        }
-        amf_ue_deassociate(amf_ue);
-
-        /*
+       
+         /*
          * When AMF release the NAS signalling connection,
          * ran_ue context is removed by ran_ue_remove() and
          * amf_ue/ran_ue is de-associated by amf_ue_deassociate().
