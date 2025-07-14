@@ -3147,6 +3147,7 @@ int smf_pco_build(uint8_t *pco_buf, uint8_t *buffer, int length)
     }
 
     size = ogs_pco_build(pco_buf, OGS_MAX_PCO_LEN, &smf);
+      ogs_expect(size > 0);
     return size;
 }
 
