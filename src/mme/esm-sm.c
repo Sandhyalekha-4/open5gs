@@ -105,7 +105,7 @@ void esm_state_inactive(ogs_fsm_t *s, mme_event_t *e)
         enb_ue = enb_ue_find_by_id(mme_ue->enb_ue_id);
         if (!enb_ue)
         {
-            ogs_error("IMSI[%s], enb_ue [%p], MME_UE id[%d], sess [%d], message_type_id", mme_ue->imsi_bcd, 
+            ogs_error("IMSI[%s], enb_ue [%p], MME_UE id[%d], sess [%d], message_type_id[%d]", mme_ue->imsi_bcd, 
                 enb_ue, mme_ue->enb_ue_id, sess->mme_ue_id,message->esm.h.message_type);
             ogs_assert(enb_ue);
         }
