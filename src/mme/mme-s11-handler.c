@@ -1513,13 +1513,13 @@ void mme_s11_handle_release_access_bearers_response(
     } else if (action == OGS_GTP_RELEASE_S1_CONTEXT_REMOVE_BY_RESET_PARTIAL) {
         enb_ue_t *iter = NULL;
 
-        enb_ue_unlink(mme_ue);
+        //enb_ue_unlink(mme_ue);
 
         if (enb_ue) {
             mme_enb_t *enb = NULL;
-
+            
             enb = mme_enb_find_by_id(enb_ue->enb_id);
-
+            enb_ue_deassociate_mme_ue(enb_ue, mme_ue);
             enb_ue_remove(enb_ue);
 
             if (enb) {
