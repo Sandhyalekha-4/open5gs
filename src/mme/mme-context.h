@@ -638,7 +638,7 @@ struct mme_ue_s {
         \
         enb_ue_holding = enb_ue_find_by_id((__mME)->enb_ue_id); \
         if (enb_ue_holding) { \
-            enb_ue_deassociate(enb_ue_holding); \
+           enb_ue_holding->mme_ue_id = OGS_INVALID_POOL_ID; \
             \
             ogs_warn("[%s] Holding S1 Context", (__mME)->imsi_bcd); \
             ogs_warn("[%s]    ENB_UE_S1AP_ID[%d] MME_UE_S1AP_ID[%d]", \
