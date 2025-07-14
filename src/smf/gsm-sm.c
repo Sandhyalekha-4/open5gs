@@ -400,7 +400,10 @@ void smf_gsm_state_wait_epc_auth_initial(ogs_fsm_t *s, smf_event_t *e)
         case OGS_DIAM_GX_CMD_CODE_CREDIT_CONTROL:
             switch(gx_message->cc_request_type) {
             case OGS_DIAM_GX_CC_REQUEST_TYPE_INITIAL_REQUEST:
-                ogs_assert(gtp_xact);
+                if (!gtp_xact) {
+                    ogs_error("GTP transaction not found. Ignoring message.");
+                    return;
+                }
                 diam_err = smf_gx_handle_cca_initial_request(sess,
                                 gx_message, gtp_xact);
                 sess->sm_data.gx_ccr_init_in_flight = false;
