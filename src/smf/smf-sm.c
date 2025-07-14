@@ -716,15 +716,15 @@ void smf_state_operational(ogs_fsm_t *s, smf_event_t *e)
      * Guard against dispatching to an FSM that may have been finalized
      * by an asynchronous shutdown triggered by SIGTERM.
      *
-     * In init.c’s event_termination(), which can be invoked asynchronously
+     * In init.cÂ’s event_termination(), which can be invoked asynchronously
      * when the process receives SIGTERM, we iterate over all NF instances:
      *     ogs_list_for_each(&ogs_sbi_self()->nf_instance_list, nf_instance)
      *         ogs_sbi_nf_fsm_fini(nf_instance);
-     * and call ogs_fsm_fini() on each instance’s FSM. That finalizes the FSM
+     * and call ogs_fsm_fini() on each instanceÂ’s FSM. That finalizes the FSM
      * and its state is reset to zero.
      *
-     * After event_termination(), any incoming SBI response—such as an NRF
-     * client callback arriving after deregistration—would otherwise be
+     * After event_termination(), any incoming SBI responseÂ—such as an NRF
+     * client callback arriving after deregistrationÂ—would otherwise be
      * dispatched into a dead FSM and trigger an assertion failure.
      *
      * To avoid this, we check OGS_FSM_STATE(&nf_instance->sm):
@@ -951,8 +951,11 @@ void smf_state_operational(ogs_fsm_t *s, smf_event_t *e)
                 ogs_assert(true == ogs_sbi_send_http_status_no_content(stream));
             } else if (state == SMF_UECM_STATE_DEREGISTERED_BY_AMF) {
                 /* SMF Deregistration */
-                ogs_assert(stream);
-                ogs_assert(true == ogs_sbi_send_http_status_no_content(stream));
+                 if (stream)
+                    ogs_assert(true ==
+                            ogs_sbi_send_http_status_no_content(stream));
+                else
+                    ogs_error("Stream has already been removed");
                 SMF_SESS_CLEAR(sess);
             } else if (state == SMF_UECM_STATE_DEREGISTERED_BY_N1_N2_RELEASE) {
                 /* SMF Deregistration */
