@@ -542,7 +542,7 @@ struct amf_ue_s {
         \
         ran_ue_holding = ran_ue_find_by_id((__aMF)->ran_ue_id); \
         if (ran_ue_holding) { \
-            ran_ue_deassociate(ran_ue_holding); \
+            ran_ue_holding->amf_ue_id = OGS_INVALID_POOL_ID; \
             \
             ogs_warn("[%s] Holding NG Context", (__aMF)->suci); \
             ogs_warn("[%s]    RAN_UE_NGAP_ID[%lld] AMF_UE_NGAP_ID[%lld]", \
