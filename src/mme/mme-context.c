@@ -3064,7 +3064,7 @@ mme_enb_t *mme_enb_add(ogs_sock_t *sock, ogs_sockaddr_t *addr)
     enb->sctp.sock = sock;
     enb->sctp.addr = addr;
     enb->sctp.type = mme_enb_sock_type(enb->sctp.sock);
-
+    ogs_info("started adding NO.OF enb's");
     if (enb->sctp.type == SOCK_STREAM) {
         enb->sctp.poll.read = ogs_pollset_add(ogs_app()->pollset,
             OGS_POLLIN, sock->fd, s1ap_recv_upcall, sock);
