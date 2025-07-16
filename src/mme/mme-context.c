@@ -4554,10 +4554,14 @@ mme_bearer_t *mme_bearer_add(mme_sess_t *sess)
     bearer->t3489.timer = ogs_timer_add(
             ogs_app()->timer_mgr, mme_timer_t3489_expire,
             OGS_UINT_TO_POINTER(bearer->id));
+    if (!bearer->t3489.timer) {
+        ogs_error("ogs_timer_add() failed");
+    }
     bearer->t3489.pkbuf = NULL;
 
     memset(&e, 0, sizeof(e));
     e.bearer_id = bearer->id;
+    ogs_info("prints bearer id's e [%d], bearerid [%d]", e.bearer_id, bearer->id);
     ogs_fsm_init(&bearer->sm, esm_state_initial, esm_state_final, &e);
 
     return bearer;
