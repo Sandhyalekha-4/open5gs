@@ -428,7 +428,12 @@ static void common_register_state(ogs_fsm_t *s, mme_event_t *e,
             OGS_FSM_TRAN(s, &emm_state_registered);
             break;
         }
-
+     ogs_info(" S1 Context register IMSI[%s] NAS-Type[%d] "
+                    "ENB-UE-ID[%d:%d][%p:%p]",
+                    mme_ue->imsi_bcd, message->emm.h.message_type,
+                    e->enb_ue_id, mme_ue->enb_ue_id,
+                    enb_ue_find_by_id(e->enb_ue_id),
+                    enb_ue_find_by_id(mme_ue->enb_ue_id));
         switch (message->emm.h.message_type) {
         case OGS_NAS_EPS_IDENTITY_RESPONSE:
             if (mme_ue->nas_eps.type == 0) {
