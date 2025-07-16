@@ -503,7 +503,7 @@ static void common_register_state(ogs_fsm_t *s, mme_event_t *e,
 
                 mme_gtp_send_delete_all_sessions(enb_ue, mme_ue,
                     OGS_GTP_DELETE_HANDLE_PDN_CONNECTIVITY_REQUEST);
-
+            ogs_info("delete all mme gtp session IMSI [%s] and UE id[%d]",  mme_ue->imsi_bcd, enb_ue);
                 if (!MME_SESSION_RELEASE_PENDING(mme_ue) &&
                     mme_ue_xact_count(mme_ue, OGS_GTP_LOCAL_ORIGINATOR) ==
                         xact_count) {
