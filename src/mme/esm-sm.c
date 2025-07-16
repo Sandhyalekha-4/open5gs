@@ -55,7 +55,7 @@ void esm_state_initial(ogs_fsm_t *s, mme_event_t *e)
     ogs_assert(s);
 
     mme_sm_debug(e);
-
+    ogs_info("print e->bearer_id=%d", e->bearer_id);
     OGS_FSM_TRAN(s, &esm_state_inactive);
 }
 
