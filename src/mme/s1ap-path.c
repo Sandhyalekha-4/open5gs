@@ -180,7 +180,7 @@ int s1ap_send_to_nas(enb_ue_t *enb_ue,
     }
 
     mme_ue = mme_ue_find_by_id(enb_ue->mme_ue_id);
-
+    ogs_info("s1ap_sendto_nas %d, IMSI[%s]", enb_ue->enb_ue_s1ap_id,  mme_ue->imsi_bcd);
     /* The Packet Buffer(pkbuf_t) for NAS message MUST make a HEADROOM.
      * When calculating AES_CMAC, we need to use the headroom of the packet. */
     nasbuf = ogs_pkbuf_alloc(NULL, OGS_NAS_HEADROOM+nasPdu->size);
@@ -305,6 +305,7 @@ int s1ap_send_to_nas(enb_ue_t *enb_ue,
 
         return OGS_ERROR;
     }
+    ogs_info("exit s1ap send to nas");
 }
 
 int s1ap_send_s1_setup_response(mme_enb_t *enb)
