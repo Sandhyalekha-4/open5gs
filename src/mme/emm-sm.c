@@ -428,12 +428,13 @@ static void common_register_state(ogs_fsm_t *s, mme_event_t *e,
             OGS_FSM_TRAN(s, &emm_state_registered);
             break;
         }
+        /*
      ogs_info(" S1 Context register IMSI[%s] NAS-Type[%d] "
                     "ENB-UE-ID[%d:%d][%p:%p]",
                     mme_ue->imsi_bcd, message->emm.h.message_type,
                     e->enb_ue_id, mme_ue->enb_ue_id,
                     enb_ue_find_by_id(e->enb_ue_id),
-                    enb_ue_find_by_id(mme_ue->enb_ue_id));
+                    enb_ue_find_by_id(mme_ue->enb_ue_id));*/
         switch (message->emm.h.message_type) {
         case OGS_NAS_EPS_IDENTITY_RESPONSE:
             if (mme_ue->nas_eps.type == 0) {
@@ -503,7 +504,7 @@ static void common_register_state(ogs_fsm_t *s, mme_event_t *e,
 
                 mme_gtp_send_delete_all_sessions(enb_ue, mme_ue,
                     OGS_GTP_DELETE_HANDLE_PDN_CONNECTIVITY_REQUEST);
-            ogs_info("delete all mme gtp session IMSI [%s] and UE id[%d]",  mme_ue->imsi_bcd, enb_ue->enb_ue_s1ap_id);
+           // ogs_info("delete all mme gtp session IMSI [%s] and UE id[%d]",  mme_ue->imsi_bcd, enb_ue->enb_ue_s1ap_id);
                 if (!MME_SESSION_RELEASE_PENDING(mme_ue) &&
                     mme_ue_xact_count(mme_ue, OGS_GTP_LOCAL_ORIGINATOR) ==
                         xact_count) {
