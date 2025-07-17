@@ -802,7 +802,11 @@ static void smf_gx_cca_cb(void *data, struct msg **msg)
 
     sess = smf_sess_find_by_id(sess_data->sess_id);
     ogs_assert(sess_data->xact_data[req_slot].cc_req_no == cc_request_number);
-    ogs_assert(sess);
+    if (!sess)
+    {
+        ogs_error("Invalid session id= %d, Retrieve [%s], cc_request_number[%d]", sess_data->sess_id, sess_data->gx_sid, cc_request_number);
+        ogs_assert(sess);
+    }
 
     gx_message = ogs_calloc(1, sizeof(ogs_diam_gx_message_t));
     ogs_assert(gx_message);
