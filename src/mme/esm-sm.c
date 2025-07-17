@@ -55,7 +55,7 @@ void esm_state_initial(ogs_fsm_t *s, mme_event_t *e)
     ogs_assert(s);
 
     mme_sm_debug(e);
-    ogs_info("print e->bearer_id=%d", e->bearer_id);
+   // ogs_info("print e->bearer_id=%d", e->bearer_id);
     OGS_FSM_TRAN(s, &esm_state_inactive);
 }
 
@@ -91,8 +91,8 @@ void esm_state_inactive(ogs_fsm_t *s, mme_event_t *e)
     ogs_assert(sess);
     mme_ue = mme_ue_find_by_id(sess->mme_ue_id);
     ogs_assert(mme_ue);
-    ogs_info("IMSI[%s], enb_ue [%d],  sess [%d], message_type_id[%d], eid[%d]", mme_ue->imsi_bcd, 
-                mme_ue->enb_ue_id, sess->mme_ue_id,message->esm.h.message_type, e->id);
+   // ogs_info("IMSI[%s], enb_ue [%d],  sess [%d], message_type_id[%d], eid[%d]", mme_ue->imsi_bcd, 
+     //           mme_ue->enb_ue_id, sess->mme_ue_id,message->esm.h.message_type, e->id);
     switch (e->id) {
     case OGS_FSM_ENTRY_SIG:
         CLEAR_BEARER_ALL_TIMERS(bearer);
