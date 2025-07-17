@@ -395,15 +395,15 @@ void smf_gsm_state_wait_epc_auth_initial(ogs_fsm_t *s, smf_event_t *e)
         gx_message = e->gx_message;
         ogs_assert(gx_message);
         gtp_xact = ogs_gtp_xact_find_by_id(e->gtp_xact_id);
-
+         if (!gtp_xact) {
+            ogs_error("GTP transaction not found. xact_id=%d, e->h.id [%d]", e->gtp_xact_id, e->h.id);
+                    //return;
+        }
         switch(gx_message->cmd_code) {
         case OGS_DIAM_GX_CMD_CODE_CREDIT_CONTROL:
             switch(gx_message->cc_request_type) {
             case OGS_DIAM_GX_CC_REQUEST_TYPE_INITIAL_REQUEST:
-                if (!gtp_xact) {
-                    ogs_error("GTP transaction not found. Ignoring message.");
-                    return;
-                }
+               ogs_assert(gtp_xact);
                 diam_err = smf_gx_handle_cca_initial_request(sess,
                                 gx_message, gtp_xact);
                 sess->sm_data.gx_ccr_init_in_flight = false;
