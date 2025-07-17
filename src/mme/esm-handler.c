@@ -258,7 +258,7 @@ int esm_handle_information_response(
                     OGS_NAS_ATTACH_TYPE_EPS_ATTACH) {
                 r = nas_eps_send_attach_accept(mme_ue);
                 ogs_expect(r == OGS_OK);
-                if (r != OGS_ERROR)
+                if (r != OGS_OK)
                 {
                     ogs_error("csmap [%p], IMSI [%s], attach value [%d] attach mode [%d]", mme_ue->csmap, 
                         mme_ue->imsi_bcd, mme_ue->nas_eps.attach.value, mme_ue->network_access_mode);
