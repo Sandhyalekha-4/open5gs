@@ -396,7 +396,8 @@ void smf_gsm_state_wait_epc_auth_initial(ogs_fsm_t *s, smf_event_t *e)
         ogs_assert(gx_message);
         gtp_xact = ogs_gtp_xact_find_by_id(e->gtp_xact_id);
          if (!gtp_xact) {
-            ogs_error("GTP transaction not found. xact_id=%d, e->h.id [%d]", e->gtp_xact_id, e->h.id);
+            ogs_error("GTP transaction not found. xact_id=%d, e->h.id [%d], sess_id", 
+                e->gtp_xact_id, e->h.id, e->sess_id);
                     //return;
         }
         switch(gx_message->cmd_code) {
