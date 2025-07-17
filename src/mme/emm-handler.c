@@ -204,7 +204,7 @@ int emm_handle_attach_request(enb_ue_t *enb_ue, mme_ue_t *mme_ue,
         ogs_assert(r != OGS_ERROR);
         return OGS_ERROR;
     }
-ogs_debug("  checking mobile indentity imsi type ");
+//ogs_debug("  checking mobile indentity imsi type ");
     switch (eps_mobile_identity->imsi.type) {
     case OGS_NAS_EPS_MOBILE_IDENTITY_IMSI:
         if (sizeof(ogs_nas_mobile_identity_imsi_t) !=
