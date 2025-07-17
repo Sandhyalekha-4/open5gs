@@ -3064,7 +3064,7 @@ mme_enb_t *mme_enb_add(ogs_sock_t *sock, ogs_sockaddr_t *addr)
     enb->sctp.sock = sock;
     enb->sctp.addr = addr;
     enb->sctp.type = mme_enb_sock_type(enb->sctp.sock);
-    ogs_info("started adding NO.OF enb's");
+   // ogs_info("started adding NO.OF enb's");
     if (enb->sctp.type == SOCK_STREAM) {
         enb->sctp.poll.read = ogs_pollset_add(ogs_app()->pollset,
             OGS_POLLIN, sock->fd, s1ap_recv_upcall, sock);
@@ -3699,8 +3699,8 @@ void mme_ue_remove(mme_ue_t *mme_ue)
     sgw_ue_t *sgw_ue = NULL;
     ogs_assert(mme_ue);
     
-ogs_info("[before Removed] Number of MME-UEs is now %d, IMSI[%s]",
-            ogs_list_count(&self.mme_ue_list),  mme_ue->imsi_bcd);
+//ogs_info("[before Removed] Number of MME-UEs is now %d, IMSI[%s]",
+  //          ogs_list_count(&self.mme_ue_list),  mme_ue->imsi_bcd);
     ogs_list_remove(&self.mme_ue_list, mme_ue);
 
     mme_ue_fsm_fini(mme_ue);
@@ -3771,8 +3771,8 @@ void mme_ue_remove_all(void)
 
     ogs_list_for_each_safe(&self.mme_ue_list, next, mme_ue) {
         enb_ue_t *enb_ue = enb_ue_find_by_id(mme_ue->enb_ue_id);
- ogs_info(" mme_ue_remove_all fun IMSI[%s], MME-UE [%d]",
-            mme_ue->imsi_bcd, mme_ue->enb_ue_id);
+ //ogs_info(" mme_ue_remove_all fun IMSI[%s], MME-UE [%d]",
+   //         mme_ue->imsi_bcd, mme_ue->enb_ue_id);
         if (enb_ue) enb_ue_remove(enb_ue);
     
         mme_ue_remove(mme_ue);
@@ -4434,7 +4434,7 @@ void mme_sess_remove(mme_sess_t *sess)
     OGS_TLV_CLEAR_DATA(&sess->pgw_epco);
 
     ogs_pool_id_free(&mme_sess_pool, sess);
-    ogs_info("[Removed]  MME-Session,IMSI [%s], MME_UE [%d]", mme_ue->imsi_bcd, sess->mme_ue_id);
+    //ogs_info("[Removed]  MME-Session,IMSI [%s], MME_UE [%d]", mme_ue->imsi_bcd, sess->mme_ue_id);
     stats_remove_mme_session();
 }
 
@@ -4445,7 +4445,7 @@ void mme_sess_remove_all(mme_ue_t *mme_ue)
     sess = mme_sess_first(mme_ue);
     while (sess) {
         next_sess = mme_sess_next(sess);
-    ogs_info("[Removed all] MME-Session, IMSI [%s], MME_UE [%d]", mme_ue->imsi_bcd, sess->mme_ue_id);
+    //ogs_info("[Removed all] MME-Session, IMSI [%s], MME_UE [%d]", mme_ue->imsi_bcd, sess->mme_ue_id);
         mme_sess_remove(sess);
 
         sess = next_sess;
@@ -4561,7 +4561,7 @@ mme_bearer_t *mme_bearer_add(mme_sess_t *sess)
 
     memset(&e, 0, sizeof(e));
     e.bearer_id = bearer->id;
-    ogs_info("prints bearer id's e [%d], bearerid [%d]", e.bearer_id, bearer->id);
+    //ogs_info("prints bearer id's e [%d], bearerid [%d]", e.bearer_id, bearer->id);
     ogs_fsm_init(&bearer->sm, esm_state_initial, esm_state_final, &e);
 
     return bearer;
