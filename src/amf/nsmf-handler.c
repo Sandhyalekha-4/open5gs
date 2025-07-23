@@ -1139,7 +1139,7 @@ int amf_nsmf_pdusession_handle_release_sm_context(amf_sess_t *sess, int state)
     if (sess->old_gsm_type == OGS_NAS_5GS_PDU_SESSION_RELEASE_COMPLETE &&
         sess->current_gsm_type ==
             OGS_NAS_5GS_PDU_SESSION_ESTABLISHMENT_REQUEST) {
-        ogs_error("[%s:%d] Do not remove Session due to Reactivation-requested",
+        ogs_warn("[%s:%d] Session retained: reactivation has been requested",
                 amf_ue->supi, sess->psi);
 
         /*
@@ -1381,8 +1381,15 @@ int amf_nsmf_pdusession_handle_release_sm_context(amf_sess_t *sess, int state)
 
                 } else if (OGS_FSM_CHECK(
                             &amf_ue->sm, gmm_state_security_mode)) {
-                    ogs_fatal("Release SM Context in security-mode");
-                    ogs_assert_if_reached();
+    /*
+     * [Issue #4012]
+     * avoid abort on SM context release in security-mode state.
+     *
+     * Replace ogs_assert_if_reached() with ogs_error to log the invalid state
+     * and keep AMF running; logs error for debugging and improves availability.
+     */
+                    ogs_error("Invalid state transition: cannot release "
+                            "SM Context during security-mode state");
                 } else if (OGS_FSM_CHECK(&amf_ue->sm,
                                 gmm_state_initial_context_setup)) {
     /*
