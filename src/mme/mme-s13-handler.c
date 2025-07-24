@@ -66,7 +66,7 @@ uint8_t mme_s13_handle_eca(
         return s13_validation_result;
     }
 
-    return validate_eca(s13_message->eca_message, mme_self()->eir);
+    return validate_eca(s13_message->eca_message, mme_self()->eir, mme_ue->imsbcd);
 }
 
 /* 3GPP TS 29.272 Annex A; Table A.1:
