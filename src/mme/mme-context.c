@@ -3229,7 +3229,8 @@ enb_ue_t *enb_ue_add(mme_enb_t *enb, uint32_t enb_ue_s1ap_id)
     enb_ue->enb_id = enb->id;
 
     ogs_list_add(&enb->enb_ue_list, enb_ue);
-
+    mme_enb_t *mme_ue = mme_ue_find_by_id(enb_ue->mme_ue_id);
+    ogs_info("IMSI [%s] and before adding eNB ue count [%d]",  mme_ue->imsi_bcd, num_of_enb_ue);
     stats_add_enb_ue();
 
     return enb_ue;
@@ -3249,7 +3250,8 @@ void enb_ue_remove(enb_ue_t *enb_ue)
     ogs_timer_delete(enb_ue->t_s1_holding);
 
     ogs_pool_id_free(&enb_ue_pool, enb_ue);
-
+    mme_enb_t *mme_ue = mme_ue_find_by_id(enb_ue->mme_ue_id);
+    ogs_info("IMSI [%s] and before removing eNB ue count [%d]",  mme_ue->imsi_bcd, num_of_enb_ue);
     stats_remove_enb_ue();
 }
 
