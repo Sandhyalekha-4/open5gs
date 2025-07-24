@@ -604,8 +604,8 @@ void s1ap_handle_initial_ue_message(mme_enb_t *enb, ogs_s1ap_message_t *message)
             sizeof(enb_ue->saved.e_cgi.cell_id));
     enb_ue->saved.e_cgi.cell_id = (be32toh(enb_ue->saved.e_cgi.cell_id) >> 4);
 
-    ogs_info("    ENB_UE_S1AP_ID[%d] MME_UE_S1AP_ID[%d] TAC[%d] CellID[0x%x]",
-        enb_ue->enb_ue_s1ap_id, enb_ue->mme_ue_s1ap_id,
+    ogs_info("  IMSI [%s], ENB_UE_S1AP_ID[%d] MME_UE_S1AP_ID[%d] TAC[%d] CellID[0x%x]",
+        MME_UE_HAVE_IMSI(mme_ue)? mme_ue->imsi_bcd : "Unknown",enb_ue->enb_ue_s1ap_id, enb_ue->mme_ue_s1ap_id,
         enb_ue->saved.tai.tac, enb_ue->saved.e_cgi.cell_id);
 
     ogs_expect(OGS_OK == s1ap_send_to_nas(
