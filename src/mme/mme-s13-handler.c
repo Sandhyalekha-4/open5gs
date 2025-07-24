@@ -46,13 +46,13 @@ uint8_t validate_s13_message(ogs_diam_s13_message_t *s13_message) {
     return OGS_OK;
 }
 
-uint8_t validate_eca(ogs_diam_s13_eca_message_t eca_message, ogs_nas_eir_t eir_config) {
+uint8_t validate_eca(ogs_diam_s13_eca_message_t eca_message, ogs_nas_eir_t eir_config,  mme_ue_t *mme_ue) {
     if (is_valid_equipment(eca_message.equipment_status_code, eir_config)) {
-        ogs_info("ME-Identity-Check accepted for equiptment status code '%d'", eca_message.equipment_status_code); 
+        ogs_info(" IMSI [%s], ME-Identity-Check accepted for equiptment status code '%d'", mme_ue->imsi_bcd, eca_message.equipment_status_code); 
         return OGS_NAS_EMM_CAUSE_REQUEST_ACCEPTED;
     }
     else {
-        ogs_info("ME-Identity-Check rejected for equiptment status code '%d'", eca_message.equipment_status_code);
+        ogs_info("IMSI[%s], ME-Identity-Check rejected for equiptment status code '%d'", mme_ue->imsi_bcd, eca_message.equipment_status_code);
         return OGS_NAS_EMM_CAUSE_ILLEGAL_ME;
     }
 }
@@ -66,7 +66,7 @@ uint8_t mme_s13_handle_eca(
         return s13_validation_result;
     }
 
-    return validate_eca(s13_message->eca_message, mme_self()->eir, mme_ue->imsbcd);
+    return validate_eca(s13_message->eca_message, mme_self()->eir, mme_ue);
 }
 
 /* 3GPP TS 29.272 Annex A; Table A.1:
