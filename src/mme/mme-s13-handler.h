@@ -32,7 +32,7 @@ uint8_t mme_s13_handle_eca(
 /* The following have been exposed for testing purposes and
  * should ever be called in practice */
 uint8_t validate_s13_message(ogs_diam_s13_message_t *s13_message);
-uint8_t validate_eca(ogs_diam_s13_eca_message_t eca_message, ogs_nas_eir_t eir_config);
+uint8_t validate_eca(ogs_diam_s13_eca_message_t eca_message, ogs_nas_eir_t eir_config, mme_ue_t *mme_ue);
 
 #ifdef __cplusplus
 }
