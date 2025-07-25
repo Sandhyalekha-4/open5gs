@@ -4033,11 +4033,11 @@ int mme_ue_set_imsi(mme_ue_t *mme_ue, char *imsi_bcd)
         /* Check if OLD mme_ue_t is different with NEW mme_ue_t */
         if (ogs_pool_index(&mme_ue_pool, mme_ue) !=
             ogs_pool_index(&mme_ue_pool, old_mme_ue)) {
-            ogs_warn("[%s] OLD UE Context Release", mme_ue->imsi_bcd);
+            ogs_warn("[%s] OLD UE Context Release and  old enb ue id[%d] and mme_IMSI[%s]", mme_ue->imsi_bcd, old_mme_ue->enb_ue_id, mme_ue->imsi);
             if (ECM_CONNECTED(old_mme_ue)) {
                 enb_ue_t *enb_ue = enb_ue_find_by_id(old_mme_ue->enb_ue_id);
                 /* Implcit S1 release */
-                ogs_warn("[%s] Implicit S1 release", mme_ue->imsi_bcd);
+                ogs_warn("[%s] Implicit S1 release, old enb ue id[%d]", mme_ue->imsi_bcd, old_mme_ue->enb_ue_id);
                 if (enb_ue) {
                     ogs_warn("[%s]    ENB_UE_S1AP_ID[%d] MME_UE_S1AP_ID[%d]",
                             old_mme_ue->imsi_bcd,
@@ -4086,8 +4086,15 @@ int mme_ue_set_imsi(mme_ue_t *mme_ue, char *imsi_bcd)
             sgw_ue = sgw_ue_find_by_id(mme_ue->sgw_ue_id);
             ogs_assert(sgw_ue);
             old_sgw_ue = sgw_ue_find_by_id(old_mme_ue->sgw_ue_id);
-            ogs_assert(old_sgw_ue);
-            sgw_ue->sgw_s11_teid = old_sgw_ue->sgw_s11_teid;
+            if (!old_sgw_ue) {
+                ogs_error("[%s] mme_ue_imsi[%s] old_sgw_ue not found for sgw_ue_id=%d",
+                              old_mme_ue->imsi_bcd, mme_ue->imsi_bcd, old_mme_ue->sgw_ue_id);
+                ogs_assert(old_sgw_ue);
+               } else {
+                sgw_ue->sgw_s11_teid = old_sgw_ue->sgw_s11_teid;
+                    }
+            //ogs_assert(old_sgw_ue);
+            //sgw_ue->sgw_s11_teid = old_sgw_ue->sgw_s11_teid;
 
             mme_ue_remove(old_mme_ue);
         }
