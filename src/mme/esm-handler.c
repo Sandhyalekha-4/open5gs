@@ -262,13 +262,14 @@ int esm_handle_information_response(
                 ogs_expect(r == OGS_OK);
              if (r == OGS_ERROR)
                 {
-                    
-                    sess->session = mme_session_find_by_apn(
-                            mme_ue, rsp->access_point_name.apn);
-                    ogs_error("csmap [%p], IMSI [%s], attach value [%d] attach mode [%d], PDN_session_type [%d]", mme_ue->csmap, 
+                    ogs_error("asking to create new session csmap [%p], IMSI [%s], attach value [%d] attach mode [%d], PDN_session_type [%d]", mme_ue->csmap, 
                         mme_ue->imsi_bcd, mme_ue->nas_eps.attach.value, mme_ue->network_access_mode, sess->session->session_type);
-                   
-                    // ogs_assert(r != OGS_ERROR);
+                    mme_session_remove_all(mme_ue);
+                   sess->session = mme_session_find_by_apn(
+                            mme_ue, rsp->access_point_name.apn);
+                    ogs_info("removed all pdn's and created new pdn's :csmap [%p], IMSI [%s], attach value [%d] attach mode [%d], PDN_session_type [%d]", mme_ue->csmap, 
+                        mme_ue->imsi_bcd, mme_ue->nas_eps.attach.value, mme_ue->network_access_mode, sess->session->session_type);
+                  // ogs_assert(r != OGS_ERROR);
                 }
             } else {
                 ogs_assert(OGS_OK ==
