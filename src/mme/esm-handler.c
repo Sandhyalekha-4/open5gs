@@ -262,8 +262,12 @@ int esm_handle_information_response(
                 ogs_expect(r == OGS_OK);
              if (r == OGS_ERROR)
                 {
+                    
+                    sess->session = mme_session_find_by_apn(
+                            mme_ue, rsp->access_point_name.apn);
                     ogs_error("csmap [%p], IMSI [%s], attach value [%d] attach mode [%d], PDN_session_type [%d]", mme_ue->csmap, 
                         mme_ue->imsi_bcd, mme_ue->nas_eps.attach.value, mme_ue->network_access_mode, sess->session->session_type);
+                   
                     // ogs_assert(r != OGS_ERROR);
                 }
             } else {
