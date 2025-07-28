@@ -270,8 +270,8 @@ int esm_handle_information_response(
                         // Optionally remove the oldest or a stale one for same APN 
                         mme_session_remove_by_apn(mme_ue, rsp->access_point_name.apn);  
                     }
-                    sess = mme_session_add_allow_duplicate_apn(mme_ue, rsp->access_point_name.apn);
-                    if (!sess) {
+                    sess->session = mme_session_add_allow_duplicate_apn(mme_ue, rsp->access_point_name.apn);
+                    if (!sess->session) {
                         ogs_error("Failed to add session for APN [%s]", rsp->access_point_name.apn);
                     }
                     ogs_info("removed all pdn's and created new pdn's :no.of session available[%d], csmap [%p], IMSI [%s], attach value [%d] attach mode [%d], PDN_session_type [%d]",
