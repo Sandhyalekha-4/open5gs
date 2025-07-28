@@ -4498,8 +4498,6 @@ ogs_session_t *mme_session_add_allow_duplicate_apn(mme_ue_t *mme_ue, const char 
 
     new_session->name = ogs_strdup(apn);
     if (!new_session->name) return NULL;
-
-    // You can assign a new context_identifier here if needed
     new_session->context_identifier = mme_ue->num_of_session + 1;
 
     mme_ue->num_of_session++;
