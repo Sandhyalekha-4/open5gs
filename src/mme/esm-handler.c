@@ -267,8 +267,8 @@ int esm_handle_information_response(
                         mme_ue->imsi_bcd, mme_ue->nas_eps.attach.value, mme_ue->network_access_mode, sess->session->session_type);
                     
                    if (mme_ue->num_of_session >= OGS_MAX_NUM_OF_SESS) {
-                        // Optionally remove the oldest or a stale one for same APN (not always needed)
-                        mme_session_remove_by_apn(mme_ue, rsp->access_point_name.apn);  // OPTIONAL based on policy
+                        // Optionally remove the oldest or a stale one for same APN 
+                        mme_session_remove_by_apn(mme_ue, rsp->access_point_name.apn);  
                     }
                     sess = mme_session_add_allow_duplicate_apn(mme_ue, rsp->access_point_name.apn);
                     if (!sess) {
