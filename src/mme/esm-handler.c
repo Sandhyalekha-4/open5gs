@@ -268,9 +268,9 @@ int esm_handle_information_response(
                     
                    if (mme_ue->num_of_session >= OGS_MAX_NUM_OF_SESS) {
                         // Optionally remove the oldest or a stale one for same APN (not always needed)
-                        mme_session_remove_by_apn(mme_ue, apn);  // OPTIONAL based on policy
+                        mme_session_remove_by_apn(mme_ue, rsp->access_point_name.apn);  // OPTIONAL based on policy
                     }
-                    ogs_session_t *sess = mme_session_add_allow_duplicate_apn(mme_ue, apn);
+                    ogs_session_t *sess = mme_session_add_allow_duplicate_apn(mme_ue, rsp->access_point_name.apn);
                     if (!sess) {
                         ogs_error("Failed to add session for APN [%s]", apn);
                     }
