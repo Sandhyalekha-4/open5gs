@@ -265,9 +265,15 @@ int esm_handle_information_response(
                     ogs_error("asking to create new session: no.of session available[%d], csmap [%p], IMSI [%s], attach value [%d] attach mode [%d], PDN_session_type [%d]", 
                         mme_ue->num_of_session, mme_ue->csmap, 
                         mme_ue->imsi_bcd, mme_ue->nas_eps.attach.value, mme_ue->network_access_mode, sess->session->session_type);
-                    mme_session_remove_all(mme_ue);
-                   sess->session = mme_session_find_by_apn(
-                            mme_ue, rsp->access_point_name.apn);
+                    
+                   if (mme_ue->num_of_session >= OGS_MAX_NUM_OF_SESS) {
+                        // Optionally remove the oldest or a stale one for same APN (not always needed)
+                        mme_session_remove_by_apn(mme_ue, apn);  // OPTIONAL based on policy
+                    }
+                    ogs_session_t *sess = mme_session_add_allow_duplicate_apn(mme_ue, apn);
+                    if (!sess) {
+                        ogs_error("Failed to add session for APN [%s]", apn);
+                    }
                     ogs_info("removed all pdn's and created new pdn's :no.of session available[%d], csmap [%p], IMSI [%s], attach value [%d] attach mode [%d], PDN_session_type [%d]",
                         mme_ue->num_of_session, mme_ue->csmap, 
                         mme_ue->imsi_bcd, mme_ue->nas_eps.attach.value, mme_ue->network_access_mode, sess->session->session_type);
