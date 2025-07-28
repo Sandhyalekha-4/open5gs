@@ -272,7 +272,7 @@ int esm_handle_information_response(
                     }
                     sess = mme_session_add_allow_duplicate_apn(mme_ue, rsp->access_point_name.apn);
                     if (!sess) {
-                        ogs_error("Failed to add session for APN [%s]", apn);
+                        ogs_error("Failed to add session for APN [%s]", rsp->access_point_name.apn);
                     }
                     ogs_info("removed all pdn's and created new pdn's :no.of session available[%d], csmap [%p], IMSI [%s], attach value [%d] attach mode [%d], PDN_session_type [%d]",
                         mme_ue->num_of_session, mme_ue->csmap, 
