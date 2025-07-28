@@ -4486,7 +4486,40 @@ mme_sess_t *mme_sess_find_by_apn(const mme_ue_t *mme_ue, const char *apn)
 
     return NULL;
 }
+ogs_session_t *mme_session_add_allow_duplicate_apn(mme_ue_t *mme_ue, const char *apn) {
+    if (mme_ue->num_of_session >= OGS_MAX_NUM_OF_SESS) {
+        ogs_error("Cannot add more PDNs for UE[%s], max [%d] reached",
+                  mme_ue->imsi_bcd, OGS_MAX_NUM_OF_SESS);
+        return NULL;
+    }
 
+    ogs_session_t *new_session = &mme_ue->session[mme_ue->num_of_session];
+    memset(new_session, 0, sizeof(*new_session));
+
+    new_session->name = ogs_strdup(apn);
+    if (!new_session->name) return NULL;
+
+    // You can assign a new context_identifier here if needed
+    new_session->context_identifier = mme_ue->num_of_session + 1;
+
+    mme_ue->num_of_session++;
+    return new_session;
+}
+void mme_session_remove_by_apn(mme_ue_t *mme_ue, const char *apn) {
+    int i;
+    for (i = 0; i < mme_ue->num_of_session; i++) {
+        if (mme_ue->session[i].name &&
+            ogs_strcasecmp(mme_ue->session[i].name, apn) == 0) {
+            ogs_info("Removing stale PDN session for APN: %s", apn);
+            if (mme_ue->session[i].name)
+                ogs_free(mme_ue->session[i].name);
+            memmove(&mme_ue->session[i], &mme_ue->session[i + 1],
+                    sizeof(ogs_session_t) * (OGS_MAX_NUM_OF_SESS - i - 1));
+            mme_ue->num_of_session--;
+            return;
+        }
+    }
+}
 mme_sess_t *mme_sess_find_by_id(ogs_pool_id_t id)
 {
     return ogs_pool_find_by_id(&mme_sess_pool, id);
