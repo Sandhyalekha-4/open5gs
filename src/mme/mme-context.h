@@ -1205,7 +1205,7 @@ void mme_session_remove_all(mme_ue_t *mme_ue);
 ogs_session_t *mme_session_find_by_apn(mme_ue_t *mme_ue, const char *apn);
 ogs_session_t *mme_default_session(mme_ue_t *mme_ue);
 void mme_session_remove_by_apn(mme_ue_t *mme_ue, const char *apn);
- ogs_session_t *mme_session_add_allow_duplicate_apn(mme_ue_t *mme_ue, const char *apn);
+ ogs_session_t *mme_session_add_allow_duplicate_apn(mme_ue_t *mme_ue, const char *apn, uint8_t session_type);
 int mme_find_served_tai(ogs_eps_tai_t *tai);
 
 mme_m_tmsi_t *mme_m_tmsi_alloc(void);
