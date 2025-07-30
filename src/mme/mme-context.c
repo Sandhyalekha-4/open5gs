@@ -4486,7 +4486,7 @@ mme_sess_t *mme_sess_find_by_apn(const mme_ue_t *mme_ue, const char *apn)
 
     return NULL;
 }
-ogs_session_t *mme_session_add_allow_duplicate_apn(mme_ue_t *mme_ue, const char *apn) {
+ogs_session_t *mme_session_add_allow_duplicate_apn(mme_ue_t *mme_ue, const char *apn, uint8_t session_type) {
     if (mme_ue->num_of_session >= OGS_MAX_NUM_OF_SESS) {
         ogs_error("Cannot add more PDNs for UE[%s], max [%d] reached",
                   mme_ue->imsi_bcd, OGS_MAX_NUM_OF_SESS);
@@ -4499,7 +4499,7 @@ ogs_session_t *mme_session_add_allow_duplicate_apn(mme_ue_t *mme_ue, const char 
     new_session->name = ogs_strdup(apn);
     if (!new_session->name) return NULL;
     new_session->context_identifier = mme_ue->num_of_session + 1;
-
+    new_session->session_type = session_type;
     mme_ue->num_of_session++;
     return new_session;
 }
