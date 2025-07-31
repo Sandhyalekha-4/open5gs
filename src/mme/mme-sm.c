@@ -334,13 +334,19 @@ void mme_state_operational(ogs_fsm_t *s, mme_event_t *e)
 
         ogs_assert(mme_ue);
         if (!OGS_FSM_STATE(&mme_ue->sm)) {
-            ogs_fatal("MESSAGE[%d]", nas_message.emm.h.message_type);
+         /*   ogs_fatal("MESSAGE[%d]", nas_message.emm.h.message_type);
             ogs_fatal("ENB_UE_S1AP_ID[%d] MME_UE_S1AP_ID[%d]",
                     enb_ue ? enb_ue->enb_ue_s1ap_id : 0,
                     enb_ue ? enb_ue->mme_ue_s1ap_id : 0);
             ogs_fatal("context [%p:%p]", enb_ue, mme_ue);
             ogs_fatal("IMSI [%s]", mme_ue ? mme_ue->imsi_bcd : "No MME_UE");
-            ogs_assert_if_reached();
+            ogs_assert_if_reached();*/
+             ogs_error("IMSI [%s] has no active FSM state, dropping EMM message [%d], ENB_UE_S1AP_ID[%d] MME_UE_S1AP_ID[%d], context [%p:%p]",
+             mme_ue->imsi_bcd, nas_message.emm.h.message_type, enb_ue ? enb_ue->enb_ue_s1ap_id : 0,
+                    enb_ue ? enb_ue->mme_ue_s1ap_id : 0,enb_ue, mme_ue);
+            mme_send_delete_session_or_mme_ue_context_release(enb_ue, mme_ue);
+            ogs_pkbuf_free(pkbuf);
+            return;
         }
         ogs_assert(OGS_FSM_STATE(&mme_ue->sm));
 
