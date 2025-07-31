@@ -4563,7 +4563,7 @@ mme_bearer_t *mme_bearer_add(mme_sess_t *sess)
 
     ogs_pool_alloc(&mme_ue->ebi_pool, &bearer->ebi_node);
     if (!bearer->ebi_node) {
-            ogs_error("EBI pool allocation failed for UE IMSI [%s], mme ebi_pool[%p], mme_ue ID[%d], sess id[%d]",
+            ogs_error("EBI pool allocation failed for UE IMSI [%s], mme_ue ID[%d], sess id[%d], mme ebi_pool[%p]",
                   mme_ue->imsi_bcd, mme_ue->id, sess->id, &mme_ue->ebi_pool);
         }
     ogs_assert(bearer->ebi_node);
