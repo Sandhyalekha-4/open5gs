@@ -313,7 +313,10 @@ void sgwc_pfcp_state_associated(ogs_fsm_t *s, sgwc_event_t *e)
 
         case OGS_PFCP_SESSION_REPORT_REQUEST_TYPE:
             if (!message->h.seid_presence) ogs_error("No SEID");
-
+            if (!sess){
+             ogs_error("sess is NULL, message->h.seid_presence[%d], message h.seid[%" PRIu64 "] and local_seid[%" PRIu64 "]", 
+                 message->h.seid_presence, message->h.seid, xact->local_seid);
+            }
             sgwc_sxa_handle_session_report_request(
                 sess, xact, &message->pfcp_session_report_request);
             break;
