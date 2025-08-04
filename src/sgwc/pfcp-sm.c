@@ -298,7 +298,7 @@ void sgwc_pfcp_state_associated(ogs_fsm_t *s, sgwc_event_t *e)
         case OGS_PFCP_SESSION_MODIFICATION_RESPONSE_TYPE:
             if (!message->h.seid_presence) ogs_error("No SEID");
            if (!sess){
-             ogs_error("sess is NULL, message->h.seid_presence[%d], message h.seid[%" PRIu64 "] and local_seid[%" PRIu64 "]", 
+             ogs_error("sess modification_response sess is NULL, message->h.seid_presence[%d], message h.seid[%" PRIu64 "] and local_seid[%" PRIu64 "]", 
                  message->h.seid_presence, message->h.seid, xact->local_seid);
             }
             sgwc_sxa_handle_session_modification_response(
