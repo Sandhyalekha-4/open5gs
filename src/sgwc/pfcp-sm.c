@@ -200,7 +200,6 @@ void sgwc_pfcp_state_associated(ogs_fsm_t *s, sgwc_event_t *e)
         }
         if (!sess){
             ogs_error("sess is NULL, message->h.seid_presence[%d], message h.seid[%" PRIu64 "] and local_seid[%" PRIu64 "]", message->h.seid_presence, message->h.seid, xact->local_seid);
-            ogs_assert(sess);
         }
         switch (message->h.type) {
         case OGS_PFCP_HEARTBEAT_REQUEST_TYPE:
