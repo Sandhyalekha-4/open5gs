@@ -19,7 +19,7 @@
 
 #include "pfcp-path.h"
 #include "sxa-handler.h"
-
+#include "inttypes.h"
 static void pfcp_restoration(ogs_pfcp_node_t *node);
 static void node_timeout(ogs_pfcp_xact_t *xact, void *data);
 
@@ -199,7 +199,7 @@ void sgwc_pfcp_state_associated(ogs_fsm_t *s, sgwc_event_t *e)
             sess = sgwc_sess_find_by_seid(xact->local_seid);
         }
         if (!sess){
-            ogs_error("sess is NULL, message->h.seid_presence[%d], message h.seid[%"PRIu64"] and local_seid[%"PRIu64 "]", message->h.seid_presence, message->h.seid, xact->local_seid);
+            ogs_error("sess is NULL, message->h.seid_presence[%d], message h.seid[%" PRIu64 "] and local_seid[%" PRIu64 "]", message->h.seid_presence, message->h.seid, xact->local_seid);
             ogs_assert(sess);
         }
         switch (message->h.type) {
