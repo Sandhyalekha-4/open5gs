@@ -20,7 +20,7 @@
 #include "pfcp-path.h"
 #include "gtp-path.h"
 #include "sxa-handler.h"
-
+#include "inttypes.h"
 static uint8_t gtp_cause_from_pfcp(uint8_t pfcp_cause)
 {
     switch (pfcp_cause) {
@@ -500,7 +500,7 @@ void sgwc_sxa_handle_session_modification_response(
             sess = sgwc_sess_find_by_id(sess_id);
             if (!sess)
             {
-                ogs_error("sess is NULL sess_id[%d]", sess_id);   
+                ogs_error("sess is NULL sess_id[%" PRIu64 "]", sess_id);   
                 ogs_assert(sess);
             }
 
