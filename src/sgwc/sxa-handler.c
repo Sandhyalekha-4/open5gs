@@ -500,7 +500,7 @@ void sgwc_sxa_handle_session_modification_response(
             sess = sgwc_sess_find_by_id(sess_id);
             if (!sess)
             {
-                ogs_error("sess is NULL sess_id[%" PRIu64 "]", sess_id);   
+                ogs_error("sess is NULL sess_id[%d]", sess_id);   
                 ogs_assert(sess);
             }
 
