@@ -493,14 +493,16 @@ void sgwc_sxa_handle_session_modification_response(
         if (!sess) {
             ogs_pool_id_t sess_id = OGS_INVALID_POOL_ID;
 
-            ogs_error("No Context");
-
             sess_id = OGS_POINTER_TO_UINT(pfcp_xact->data);
             ogs_assert(sess_id >= OGS_MIN_POOL_ID &&
                     sess_id <= OGS_MAX_POOL_ID);
-
+            ogs_error("No Context sess_id[%d]", sess_id);
             sess = sgwc_sess_find_by_id(sess_id);
-            ogs_assert(sess);
+            if (!sess)
+            {
+                ogs_error("sess is NULL sess_id[%d]", sess_id);   
+                ogs_assert(sess);
+            }
 
             cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
         }
