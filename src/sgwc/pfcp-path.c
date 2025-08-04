@@ -18,7 +18,7 @@
  */
 
 #include "pfcp-path.h"
-
+#include "inttypes.h"
 static void pfcp_node_fsm_init(ogs_pfcp_node_t *node, bool try_to_associate)
 {
     sgwc_event_t e;
