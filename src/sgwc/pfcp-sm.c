@@ -198,7 +198,10 @@ void sgwc_pfcp_state_associated(ogs_fsm_t *s, sgwc_event_t *e)
              * locally stored in xact when sending the original request: */
             sess = sgwc_sess_find_by_seid(xact->local_seid);
         }
-
+        if (!sess){
+            ogs_error("sess is NULL, message->h.seid_presence[%d], message h.seid[%d] and local_seid[%d]", message->h.seid_presence, message->h.seid, xact->local_seid);
+            ogs_assert(sess);
+        }
         switch (message->h.type) {
         case OGS_PFCP_HEARTBEAT_REQUEST_TYPE:
             ogs_expect(true ==
