@@ -264,9 +264,8 @@ void emm_state_registered(ogs_fsm_t *s, mme_event_t *e)
          */
             ogs_debug("[%s] Starting Implicit Detach timer",
                 mme_ue->imsi_bcd);
-            /*ogs_timer_start(mme_ue->t_implicit_detach.timer,
-                ogs_time_from_sec(mme_self()->time.t3412.value + 240));*/
-			ogs_timer_start(mme_ue->t_implicit_detach.timer, ogs_time_from_sec(60)); //ignoring the t3412 set to 540 in mme.yaml
+            ogs_timer_start(mme_ue->t_implicit_detach.timer,
+                ogs_time_from_sec(mme_self()->time.t3412.value + 240));
             break;
 
         case MME_TIMER_IMPLICIT_DETACH:

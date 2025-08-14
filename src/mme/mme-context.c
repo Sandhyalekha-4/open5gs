@@ -3229,7 +3229,8 @@ enb_ue_t *enb_ue_add(mme_enb_t *enb, uint32_t enb_ue_s1ap_id)
     enb_ue->enb_id = enb->id;
 
     ogs_list_add(&enb->enb_ue_list, enb_ue);
-
+    mme_ue_t  *mme_ue = mme_ue_find_by_id(enb_ue->mme_ue_id); //findout the mme_ue and get the imsi number from mme ue
+    ogs_info("IMSI [%s] and before adding eNB ue count [%d]",  MME_UE_HAVE_IMSI(mme_ue) ? mme_ue->imsi_bcd : "Unknown", num_of_enb_ue);//print the imsi number before adding the ue
     stats_add_enb_ue();
 
     return enb_ue;
@@ -3249,7 +3250,8 @@ void enb_ue_remove(enb_ue_t *enb_ue)
     ogs_timer_delete(enb_ue->t_s1_holding);
 
     ogs_pool_id_free(&enb_ue_pool, enb_ue);
-
+    mme_ue_t  *mme_ue = mme_ue_find_by_id(enb_ue->mme_ue_id); //findout the mme_ue and get the imsi number from mme ue
+    ogs_info("IMSI [%s] and before removing eNB ue count [%d]",  MME_UE_HAVE_IMSI(mme_ue) ? mme_ue->imsi_bcd : "Unknown", num_of_enb_ue); //print the imsi number before remove the ue
     stats_remove_enb_ue();
 }
 
@@ -4031,11 +4033,11 @@ int mme_ue_set_imsi(mme_ue_t *mme_ue, char *imsi_bcd)
         /* Check if OLD mme_ue_t is different with NEW mme_ue_t */
         if (ogs_pool_index(&mme_ue_pool, mme_ue) !=
             ogs_pool_index(&mme_ue_pool, old_mme_ue)) {
-            ogs_warn("[%s] OLD UE Context Release", mme_ue->imsi_bcd);
+            ogs_warn("[%s] OLD UE Context Release and old enb ue id[%d]", mme_ue->imsi_bcd, old_mme_ue->enb_ue_id);
             if (ECM_CONNECTED(old_mme_ue)) {
                 enb_ue_t *enb_ue = enb_ue_find_by_id(old_mme_ue->enb_ue_id);
                 /* Implcit S1 release */
-                ogs_warn("[%s] Implicit S1 release", mme_ue->imsi_bcd);
+                ogs_warn("[%s] Implicit S1 release, old enb ue id[%d]", mme_ue->imsi_bcd, old_mme_ue->enb_ue_id);
                 if (enb_ue) {
                     ogs_warn("[%s]    ENB_UE_S1AP_ID[%d] MME_UE_S1AP_ID[%d]",
                             old_mme_ue->imsi_bcd,
@@ -4084,10 +4086,18 @@ int mme_ue_set_imsi(mme_ue_t *mme_ue, char *imsi_bcd)
             sgw_ue = sgw_ue_find_by_id(mme_ue->sgw_ue_id);
             ogs_assert(sgw_ue);
             old_sgw_ue = sgw_ue_find_by_id(old_mme_ue->sgw_ue_id);
-            ogs_assert(old_sgw_ue);
-            sgw_ue->sgw_s11_teid = old_sgw_ue->sgw_s11_teid;
-
-            mme_ue_remove(old_mme_ue);
+            if (!old_sgw_ue)
+            {
+                ogs_error("[%s] old_sgw_ue not found for sgw_ue_id=%d",
+                               mme_ue->imsi_bcd, old_mme_ue->sgw_ue_id);
+                sgw_ue->sgw_s11_teid = OGS_INVALID_POOL_ID; //storing the invalid poolid to s11_teid when old_sgw_ue is NULL 
+            } 
+            else 
+            {
+                sgw_ue->sgw_s11_teid = old_sgw_ue->sgw_s11_teid;
+            }
+           
+          mme_ue_remove(old_mme_ue);
         }
     }
 
@@ -4478,7 +4488,40 @@ mme_sess_t *mme_sess_find_by_apn(const mme_ue_t *mme_ue, const char *apn)
 
     return NULL;
 }
+ogs_session_t *mme_session_add_allow_duplicate_apn(mme_ue_t *mme_ue, const char *apn, uint8_t session_type) { 
+//this function is using for adding the duplicate apn
+    if (mme_ue->num_of_session >= OGS_MAX_NUM_OF_SESS) { //if pdn's more than 4, we can't allow to add the pdn's
+        ogs_error("Cannot add more PDNs for UE[%s], max [%d] reached",
+                  mme_ue->imsi_bcd, OGS_MAX_NUM_OF_SESS);
+        return NULL;
+    }
 
+    ogs_session_t *new_session = &mme_ue->session[mme_ue->num_of_session]; //creating new session
+    memset(new_session, 0, sizeof(*new_session));
+
+    new_session->name = ogs_strdup(apn);
+    if (!new_session->name) return NULL;
+    new_session->context_identifier = mme_ue->num_of_session + 1; //adding new pdn session for the same apn 
+    new_session->session_type = session_type;  //copying the session type like ipv4 and ipv6 etc
+    mme_ue->num_of_session++;
+    return new_session;
+}
+void mme_session_remove_by_apn(mme_ue_t *mme_ue, const char *apn) {
+    //Removes an existing PDN session from an MME UE context that matches the specified APN
+    int i;
+    for (i = 0; i < mme_ue->num_of_session; i++) {
+        if (mme_ue->session[i].name &&
+            ogs_strcasecmp(mme_ue->session[i].name, apn) == 0) {
+            ogs_info("Removing stale PDN session for APN: %s", apn); 
+            if (mme_ue->session[i].name)
+                ogs_free(mme_ue->session[i].name);
+            memmove(&mme_ue->session[i], &mme_ue->session[i + 1],
+                    sizeof(ogs_session_t) * (OGS_MAX_NUM_OF_SESS - i - 1));//Shifts the remaining sessions up to remove the gap
+            mme_ue->num_of_session--; //Decrements the total number of active sessions
+            return;
+        }
+    }
+}
 mme_sess_t *mme_sess_find_by_id(ogs_pool_id_t id)
 {
     return ogs_pool_find_by_id(&mme_sess_pool, id);
@@ -4523,6 +4566,10 @@ mme_bearer_t *mme_bearer_add(mme_sess_t *sess)
     ogs_list_init(&bearer->update.xact_list);
 
     ogs_pool_alloc(&mme_ue->ebi_pool, &bearer->ebi_node);
+    if (!bearer->ebi_node) {
+            ogs_error("EBI pool allocation failed for UE IMSI [%s], mme_ue ID[%d], sess id[%d], mme ebi_pool[%p]",
+                  mme_ue->imsi_bcd, mme_ue->id, sess->id, &mme_ue->ebi_pool);
+    }
     ogs_assert(bearer->ebi_node);
 
     bearer->ebi = *(bearer->ebi_node);

@@ -103,6 +103,11 @@ void esm_state_inactive(ogs_fsm_t *s, mme_event_t *e)
         ogs_assert(message);
 
         enb_ue = enb_ue_find_by_id(mme_ue->enb_ue_id);
+        if (!enb_ue) //Printing Id's that are still valid even if enb_ue is NULL 
+        {
+            ogs_debug("IMSI[%s], enb_ue [%d], MME_UE id[%d], sess_id [%d], message_type_id[%d]", mme_ue->imsi_bcd, 
+                enb_ue->enb_ue_s1ap_id, mme_ue->enb_ue_id, sess->mme_ue_id,message->esm.h.message_type);
+        }
         ogs_assert(enb_ue);
 
         switch (message->esm.h.message_type) {

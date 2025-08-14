@@ -418,7 +418,7 @@ void s1ap_handle_initial_ue_message(mme_enb_t *enb, ogs_s1ap_message_t *message)
     S1AP_CellIdentity_t *cell_ID = NULL;
 
     enb_ue_t *enb_ue = NULL;
-
+    mme_ue_t *mme_ue = NULL; 
     ogs_assert(enb);
     ogs_assert(enb->sctp.sock);
 
@@ -490,7 +490,7 @@ void s1ap_handle_initial_ue_message(mme_enb_t *enb, ogs_s1ap_message_t *message)
         if (S_TMSI) {
             served_gummei_t *served_gummei = &mme_self()->served_gummei[0];
             ogs_nas_eps_guti_t nas_guti;
-            mme_ue_t *mme_ue = NULL;
+           // mme_ue_t *mme_ue = NULL;
 
             memset(&nas_guti, 0, sizeof(ogs_nas_eps_guti_t));
 
@@ -546,7 +546,7 @@ void s1ap_handle_initial_ue_message(mme_enb_t *enb, ogs_s1ap_message_t *message)
             }
         }
     } else {
-        mme_ue_t *mme_ue = mme_ue_find_by_id(enb_ue->mme_ue_id);
+        mme_ue = mme_ue_find_by_id(enb_ue->mme_ue_id);
         ogs_error("Known UE ENB_UE_S1AP_ID[%d] [%p:%p]",
                 (int)*ENB_UE_S1AP_ID, enb_ue, mme_ue);
         if (mme_ue) {
@@ -604,8 +604,8 @@ void s1ap_handle_initial_ue_message(mme_enb_t *enb, ogs_s1ap_message_t *message)
             sizeof(enb_ue->saved.e_cgi.cell_id));
     enb_ue->saved.e_cgi.cell_id = (be32toh(enb_ue->saved.e_cgi.cell_id) >> 4);
 
-    ogs_info("    ENB_UE_S1AP_ID[%d] MME_UE_S1AP_ID[%d] TAC[%d] CellID[0x%x]",
-        enb_ue->enb_ue_s1ap_id, enb_ue->mme_ue_s1ap_id,
+    ogs_info("  IMSI [%s], ENB_UE_S1AP_ID[%d] MME_UE_S1AP_ID[%d] TAC[%d] CellID[0x%x]",
+        MME_UE_HAVE_IMSI(mme_ue)? mme_ue->imsi_bcd : "Unknown",enb_ue->enb_ue_s1ap_id, enb_ue->mme_ue_s1ap_id,
         enb_ue->saved.tai.tac, enb_ue->saved.e_cgi.cell_id);
 
     ogs_expect(OGS_OK == s1ap_send_to_nas(
