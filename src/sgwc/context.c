@@ -18,7 +18,7 @@
  */
 
 #include <yaml.h>
-
+#include "ogs-core.h"
 #include "context.h"
 
 static sgwc_context_t self;
@@ -564,11 +564,25 @@ sgwc_bearer_t *sgwc_bearer_add(sgwc_sess_t *sess)
 
     /* Downlink */
     tunnel = sgwc_tunnel_add(bearer, OGS_GTP2_F_TEID_S5_S8_SGW_GTP_U);
-    ogs_assert(tunnel);
+    //ogs_assert(tunnel);
+	if (!tunnel) {
+		ogs_warn("sgwc_tunnel_add() failed for downlink for session id=", bearer->sess_id);
+		ogs_gtp_send_error_message(s11_xact, sgwc_ue ? sgwc_ue->mme_s11_teid : 0,
+			OGS_GTP2_CREATE_INDIRECT_DATA_FORWARDING_TUNNEL_RESPONSE_TYPE,
+			OGS_GTP2_CAUSE_RESOURCE_UNAVAILABLE);
+		return NULL;
+	}
 
     /* Uplink */
     tunnel = sgwc_tunnel_add(bearer, OGS_GTP2_F_TEID_S1_U_SGW_GTP_U);
-    ogs_assert(tunnel);
+    //ogs_assert(tunnel);
+	if (!tunnel) {
+		ogs_warn("sgwc_tunnel_add() failed for uplink for session id=", bearer->sess_id);
+		ogs_gtp_send_error_message(s11_xact, sgwc_ue ? sgwc_ue->mme_s11_teid : 0,
+			OGS_GTP2_CREATE_INDIRECT_DATA_FORWARDING_TUNNEL_RESPONSE_TYPE,
+			OGS_GTP2_CAUSE_RESOURCE_UNAVAILABLE);
+		return NULL;
+	}	
 
     ogs_list_add(&sess->bearer_list, bearer);
 
@@ -696,7 +710,13 @@ sgwc_tunnel_t *sgwc_tunnel_add(
     tunnel->interface_type = interface_type;
 
     pdr = ogs_pfcp_pdr_add(&sess->pfcp);
-    ogs_assert(pdr);
+    //ogs_assert(pdr);
+	if (!pdr) {
+		ogs_warn("pdr==NULL (bearer=%u). Rolling back", bearer->sess_id);
+		/* optional: sgwc_tunnel_free(tunnel); */
+		//ogs_gtp_send_error_message(...);
+		return NULL;
+	}
 
     ogs_assert(sess->session.name);
     pdr->apn = ogs_strdup(sess->session.name);
