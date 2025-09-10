@@ -696,7 +696,11 @@ sgwc_tunnel_t *sgwc_tunnel_add(
     tunnel->interface_type = interface_type;
 
     pdr = ogs_pfcp_pdr_add(&sess->pfcp);
-    ogs_assert(pdr);
+    //ogs_assert(pdr);
+	if(!pdr){
+		OGS_WARN("sgwc_tunnel_add(): ogs_pfcp_pdr_add() returned NULL (pdr_id_pool exhausted or error). Avoiding abort.");
+		return -1;
+	}
 
     ogs_assert(sess->session.name);
     pdr->apn = ogs_strdup(sess->session.name);
