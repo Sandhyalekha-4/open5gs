@@ -566,10 +566,10 @@ sgwc_bearer_t *sgwc_bearer_add(sgwc_sess_t *sess)
     tunnel = sgwc_tunnel_add(bearer, OGS_GTP2_F_TEID_S5_S8_SGW_GTP_U);
     //ogs_assert(tunnel);
 	if (!tunnel) {
-		ogs_warn("sgwc_tunnel_add() failed for downlink for session id=", bearer->sess_id);
-		ogs_gtp_send_error_message(s11_xact, sgwc_ue ? sgwc_ue->mme_s11_teid : 0,
+		ogs_warn("sgwc_tunnel_add() failed for downlink for session id=%d", bearer->sess_id);
+		/*ogs_gtp_send_error_message(s11_xact, sgwc_ue ? sgwc_ue->mme_s11_teid : 0,
 			OGS_GTP2_CREATE_INDIRECT_DATA_FORWARDING_TUNNEL_RESPONSE_TYPE,
-			OGS_GTP2_CAUSE_RESOURCE_UNAVAILABLE);
+			OGS_GTP2_CAUSE_RESOURCE_UNAVAILABLE);*/
 		return NULL;
 	}
 
@@ -577,10 +577,10 @@ sgwc_bearer_t *sgwc_bearer_add(sgwc_sess_t *sess)
     tunnel = sgwc_tunnel_add(bearer, OGS_GTP2_F_TEID_S1_U_SGW_GTP_U);
     //ogs_assert(tunnel);
 	if (!tunnel) {
-		ogs_warn("sgwc_tunnel_add() failed for uplink for session id=", bearer->sess_id);
-		ogs_gtp_send_error_message(s11_xact, sgwc_ue ? sgwc_ue->mme_s11_teid : 0,
+		ogs_warn("sgwc_tunnel_add() failed for uplink for session id=%d", bearer->sess_id);
+		/*ogs_gtp_send_error_message(s11_xact, sgwc_ue ? sgwc_ue->mme_s11_teid : 0,
 			OGS_GTP2_CREATE_INDIRECT_DATA_FORWARDING_TUNNEL_RESPONSE_TYPE,
-			OGS_GTP2_CAUSE_RESOURCE_UNAVAILABLE);
+			OGS_GTP2_CAUSE_RESOURCE_UNAVAILABLE);*/
 		return NULL;
 	}	
 
