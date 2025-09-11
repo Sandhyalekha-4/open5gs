@@ -1421,9 +1421,9 @@ void sgwc_s11_handle_create_indirect_data_forwarding_tunnel_request(
         //ogs_assert(bearer);
 		
 		if (!bearer) {
-			ogs_error("Create Indirect Data Forwarding: bearer not found for EBI=%u, UE=%s",
+			ogs_error("Create Indirect Data Forwarding: bearer not found for EBI=%u, UE=%d",
 					  req->bearer_contexts[i].eps_bearer_id.u8,
-					  sgwc_ue ? sgwc_ue->imsi : "unknown");
+					  sgwc_ue ? sgwc_ue->imsi : 0);
 			ogs_gtp_send_error_message(s11_xact,
 				sgwc_ue ? sgwc_ue->mme_s11_teid : 0,
 				OGS_GTP2_CREATE_INDIRECT_DATA_FORWARDING_TUNNEL_RESPONSE_TYPE,
