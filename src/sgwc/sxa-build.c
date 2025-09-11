@@ -291,10 +291,10 @@ ogs_pkbuf_t *sgwc_sxa_build_bearer_to_modify_list(
 
 		/* Dump the lists so we can see why they are empty/mismatched */
 		/* Example: iterate the pdr lists and print identifiers */
-		ogs_pfcp_pdr_t *pdr;
+		/*ogs_pfcp_pdr_t *pdr;
 		ogs_list_for_each(&sess->pdr_list, pdr) {
 			ogs_error("sess[%p] pdr id=%d teid=0x%x", sess, pdr->id, pdr->teid);
-		}
+		}*/
 
 		/* optionally dump FARs/QERs similarly */
 
