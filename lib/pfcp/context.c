@@ -2543,3 +2543,35 @@ void ogs_pfcp_pool_final(ogs_pfcp_sess_t *sess)
     ogs_pool_destroy(&sess->qer_id_pool);
     ogs_pool_destroy(&sess->bar_id_pool);
 }
+
+/* safe dump: print basic sess / pdr / far counts and IDs */
+void ogs_pfcp_sess_dump(ogs_pfcp_sess_t *sess)
+{
+    if (!sess) {
+        ogs_error("ogs_pfcp_sess_dump: sess == NULL");
+        return;
+    }
+
+    ogs_error("PFCP SESS DUMP: sess=%p SEID=%" PRIu64 " (addr: %s), pdr_list=%p, far_list=%p",
+              sess, (uint64_t)sess->seid, ogs_pfcp_sess_id_to_string(sess), &sess->pdr_list, &sess->far_list);
+
+    /* dump PDRs */
+    ogs_pfcp_pdr_t *pdr = NULL;
+    int pdr_count = 0;
+    ogs_list_for_each(&sess->pdr_list, pdr) {
+        pdr_count++;
+        ogs_error("  PDR[%d]: pdr=%p id=%d teid=0x%x f_teid.len=%d",
+                  pdr_count, pdr, pdr->id, pdr->f_teid.teid, pdr->f_teid_len);
+    }
+    ogs_error("  total_pdr_count=%d", pdr_count);
+
+    /* dump FARs */
+    ogs_pfcp_far_t *far = NULL;
+    int far_count = 0;
+    ogs_list_for_each(&sess->far_list, far) {
+        far_count++;
+        ogs_error("  FAR[%d]: far=%p id=%d apply_action=0x%x",
+                  far_count, far, far->id, far->apply_action);
+    }
+    ogs_error("  total_far_count=%d", far_count);
+}
