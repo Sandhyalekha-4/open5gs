@@ -19,6 +19,8 @@
 
 #include "app/ogs-app.h"
 #include "ogs-pfcp.h"
+#include <inttypes.h>
+
 
 int __ogs_pfcp_domain;
 static ogs_pfcp_context_t self;
@@ -2553,7 +2555,12 @@ void ogs_pfcp_sess_dump(ogs_pfcp_sess_t *sess)
     }
 
     ogs_error("PFCP SESS DUMP: sess=%p SEID=%" PRIu64 " (addr: %s), pdr_list=%p, far_list=%p",
-              sess, (uint64_t)sess->seid, ogs_pfcp_sess_id_to_string(sess), &sess->pdr_list, &sess->far_list);
+          (void *)sess,
+          (uint64_t)sess->session.seid,   /* or sess->seid depending on your struct field */
+          ogs_pfcp_sess_id_to_string(sess),
+          (void *)&sess->pdr_list,
+          (void *)&sess->far_list);
+
 
     /* dump PDRs */
     ogs_pfcp_pdr_t *pdr = NULL;
