@@ -1324,6 +1324,10 @@ ogs_pfcp_pdr_t *ogs_pfcp_pdr_add(ogs_pfcp_sess_t *sess)
 
     pdr->sess = sess;
     ogs_list_add(&sess->pdr_list, pdr);
+	
+	ogs_info("ogs_pfcp_pdr_add: sess=%p seid=%" PRIu64 " pdr=%p id=%d teid=0x%x",
+         sess, (uint64_t)sess->seid, pdr, pdr->id, pdr->teid);
+	ogs_pfcp_sess_dump(sess); /* optional, only if verbose/debug */
 
     return pdr;
 }
@@ -1567,6 +1571,10 @@ void ogs_pfcp_pdr_remove(ogs_pfcp_pdr_t *pdr)
 
     ogs_assert(pdr);
     ogs_assert(pdr->sess);
+	
+	ogs_info("ogs_pfcp_pdr_remove: sess=%p seid=%" PRIu64 " removing pdr=%p id=%d teid=0x%x",
+         pdr->sess, (uint64_t)pdr->sess->seid, pdr, pdr->id, pdr->teid);
+	ogs_pfcp_sess_dump(pdr->sess); /* optional */
 
     ogs_list_remove(&pdr->sess->pdr_list, pdr);
 
@@ -1652,6 +1660,11 @@ ogs_pfcp_far_t *ogs_pfcp_far_add(ogs_pfcp_sess_t *sess)
 
     far->sess = sess;
     ogs_list_add(&sess->far_list, far);
+	
+	/*ogs_info("ogs_pfcp_pdr_add: sess=%p seid=%" PRIu64 " pdr=%p id=%d teid=0x%x",
+         sess, (uint64_t)sess->seid, pdr, pdr->id, pdr->teid);*/
+	ogs_pfcp_sess_dump(sess); /* optional, only if verbose/debug */
+
 
     return far;
 }
@@ -1930,6 +1943,8 @@ ogs_pfcp_urr_t *ogs_pfcp_urr_add(ogs_pfcp_sess_t *sess)
 
     urr->sess = sess;
     ogs_list_add(&sess->urr_list, urr);
+	
+	ogs_pfcp_sess_dump(sess); /* optional, only if verbose/debug */
 
     return urr;
 }
@@ -2015,6 +2030,8 @@ ogs_pfcp_qer_t *ogs_pfcp_qer_add(ogs_pfcp_sess_t *sess)
 
     qer->sess = sess;
     ogs_list_add(&sess->qer_list, qer);
+	
+	ogs_pfcp_sess_dump(sess); /* optional, only if verbose/debug */
 
     return qer;
 }
