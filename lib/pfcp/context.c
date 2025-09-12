@@ -2547,7 +2547,7 @@ void ogs_pfcp_pool_final(ogs_pfcp_sess_t *sess)
 }
 
 /* Safe PFCP session dump - put this in lib/pfcp/context.c */
-void ogs_pfcp_sess_dump(ogs_pfcp_sess_t *sess)
+static void ogs_pfcp_sess_dump(ogs_pfcp_sess_t *sess)
 {
     if (!sess) {
         ogs_error("ogs_pfcp_sess_dump: sess == NULL");
