@@ -1609,8 +1609,10 @@ void ogs_pfcp_pdr_remove(ogs_pfcp_pdr_t *pdr)
     ogs_assert(pdr);
     ogs_assert(pdr->sess);
 	
-	ogs_info("ogs_pfcp_pdr_remove: sess=%p seid=%" PRIu64 " removing pdr=%p id=%d teid=0x%x",
-         pdr->sess, (uint64_t)pdr->sess->seid, pdr, pdr->id, pdr->teid);
+	/* Diagnostic: print session pointer and PDR being removed */
+    ogs_info("ogs_pfcp_pdr_remove: sess=%p removing pdr=%p id=%u teid=0x%x",
+                 (void *)pdr->sess, (void *)pdr,
+                 (unsigned int)pdr->id, (unsigned int)pdr->teid);
 	ogs_pfcp_sess_dump(pdr->sess); /* optional */
 
     ogs_list_remove(&pdr->sess->pdr_list, pdr);
