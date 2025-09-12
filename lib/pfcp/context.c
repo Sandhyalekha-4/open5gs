@@ -1361,10 +1361,11 @@ ogs_pfcp_pdr_t *ogs_pfcp_pdr_add(ogs_pfcp_sess_t *sess)
     pdr->sess = sess;
     ogs_list_add(&sess->pdr_list, pdr);
 	
-	ogs_info("ogs_pfcp_pdr_add: sess=%p seid=%" PRIu64 " pdr=%p id=%d teid=0x%x",
-         sess, (uint64_t)sess->seid, pdr, pdr->id, pdr->teid);
-	ogs_pfcp_sess_dump(sess); /* optional, only if verbose/debug */
-
+	/* Diagnostic: print session pointer and PDR basics (avoid printing non-existing fields) */
+    ogs_info("ogs_pfcp_pdr_add: sess=%p pdr=%p id=%u teid=0x%x",
+			(void *)sess, (void *)pdr,
+			(unsigned int)pdr->id, (unsigned int)pdr->teid);
+	ogs_pfcp_sess_dump(sess);
     return pdr;
 }
 
