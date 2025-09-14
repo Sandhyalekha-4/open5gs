@@ -276,32 +276,6 @@ ogs_pkbuf_t *sgwc_sxa_build_bearer_to_modify_list(
         }
     }
 
-	/* compute counters already present in function */
-	int total_ops = num_of_remove_pdr + num_of_remove_far +
-					num_of_create_pdr + num_of_create_far +
-					num_of_update_pdr + num_of_update_far;
-
-	if (total_ops == 0) {
-		ogs_error("sgwc_sxa_build_bearer_to_modify_list: ZERO total_ops; "
-				  "remove_pdr=%d remove_far=%d create_pdr=%d create_far=%d "
-				  "update_pdr=%d update_far=%d. Dumping lists...", 
-				  num_of_remove_pdr, num_of_remove_far,
-				  num_of_create_pdr, num_of_create_far,
-				  num_of_update_pdr, num_of_update_far);
-
-		/* Dump the lists so we can see why they are empty/mismatched */
-		/* Example: iterate the pdr lists and print identifiers */
-		/*ogs_pfcp_pdr_t *pdr;
-		ogs_list_for_each(&sess->pdr_list, pdr) {
-			ogs_error("sess[%p] pdr id=%d teid=0x%x", sess, pdr->id, pdr->teid);
-		}*/
-
-		/* optionally dump FARs/QERs similarly */
-
-		/* Instead of assert, return error so process continues */
-		return NULL;
-	}
-
     ogs_assert(num_of_remove_pdr + num_of_remove_far + num_of_create_pdr +
             num_of_create_far + num_of_update_pdr + num_of_update_far);
 

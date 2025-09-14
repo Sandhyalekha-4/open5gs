@@ -324,14 +324,7 @@ void sgwc_s11_handle_create_session_request(
                 req->bearer_contexts_to_be_created[i].bearer_level_qos.len);
 
         bearer = sgwc_bearer_add(sess);
-        //ogs_assert(bearer);
-		if (!bearer) {
-			ogs_error("No bearer for EBI=%u", req->bearer_contexts_to_be_created[i].eps_bearer_id.u8);
-			ogs_gtp_send_error_message(s11_xact, sgwc_ue ? sgwc_ue->mme_s11_teid : 0,
-				OGS_GTP2_CREATE_INDIRECT_DATA_FORWARDING_TUNNEL_RESPONSE_TYPE,
-				OGS_GTP2_CAUSE_MANDATORY_IE_MISSING);
-			return;
-		}
+        ogs_assert(bearer);
 
         /* Set Bearer EBI */
         bearer->ebi = req->bearer_contexts_to_be_created[i].eps_bearer_id.u8;
@@ -1418,19 +1411,7 @@ void sgwc_s11_handle_create_indirect_data_forwarding_tunnel_request(
 
         bearer = sgwc_bearer_find_by_ue_ebi(sgwc_ue,
                     req->bearer_contexts[i].eps_bearer_id.u8);
-        //ogs_assert(bearer);
-		
-		if (!bearer) {
-			ogs_error("Create Indirect Data Forwarding: bearer not found for EBI=%u", 
-					  req->bearer_contexts[i].eps_bearer_id.u8);
-			ogs_gtp_send_error_message(s11_xact,
-				sgwc_ue ? sgwc_ue->mme_s11_teid : 0,
-				OGS_GTP2_CREATE_INDIRECT_DATA_FORWARDING_TUNNEL_RESPONSE_TYPE,
-				OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND);
-			/* Rollback any local per-request allocations if needed */
-			return;
-		}
-
+        ogs_assert(bearer);
         sess = sgwc_sess_find_by_id(bearer->sess_id);
         ogs_assert(sess);
 
@@ -1440,7 +1421,14 @@ void sgwc_s11_handle_create_indirect_data_forwarding_tunnel_request(
 
             tunnel = sgwc_tunnel_add(bearer,
                     OGS_GTP2_F_TEID_SGW_GTP_U_FOR_DL_DATA_FORWARDING);
-            ogs_assert(tunnel);
+            if (!tunnel) {
+                ogs_error("sgwc_tunnel_add() failed");
+                ogs_gtp_send_error_message(
+                    s11_xact, sgwc_ue ? sgwc_ue->mme_s11_teid : 0,
+                    OGS_GTP2_CREATE_INDIRECT_DATA_FORWARDING_TUNNEL_RESPONSE_TYPE,
+                    OGS_GTP2_CAUSE_SYSTEM_FAILURE);
+                return;
+            }
 
             tunnel->remote_teid = be32toh(req_teid->teid);
 
@@ -1482,7 +1470,14 @@ void sgwc_s11_handle_create_indirect_data_forwarding_tunnel_request(
 
             tunnel = sgwc_tunnel_add(bearer,
                     OGS_GTP2_F_TEID_SGW_GTP_U_FOR_UL_DATA_FORWARDING);
-            ogs_assert(tunnel);
+            if (!tunnel) {
+                ogs_error("sgwc_tunnel_add() failed");
+                ogs_gtp_send_error_message(
+                    s11_xact, sgwc_ue ? sgwc_ue->mme_s11_teid : 0,
+                    OGS_GTP2_CREATE_INDIRECT_DATA_FORWARDING_TUNNEL_RESPONSE_TYPE,
+                    OGS_GTP2_CAUSE_SYSTEM_FAILURE);
+                return;
+            }
 
             tunnel->remote_teid = be32toh(req_teid->teid);
 
