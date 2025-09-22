@@ -275,33 +275,10 @@ ogs_pkbuf_t *sgwc_sxa_build_bearer_to_modify_list(
             }
         }
     }
-#if 0
+
     ogs_assert(num_of_remove_pdr + num_of_remove_far + num_of_create_pdr +
             num_of_create_far + num_of_update_pdr + num_of_update_far);
-#else
-	 /* Defensive handling: do not abort if there are zero PDR/FAR ops.
-     * This can occur if a PFCP Session Modification contains no bearer-level
-     * changes (or due to a race with concurrent session deletion).
-     *
-     * Instead of asserting (which aborts the process), log an error and
-     * return NULL so the caller can handle the condition gracefully.
-     */
-    if ((num_of_remove_pdr + num_of_remove_far + num_of_create_pdr +
-            num_of_create_far + num_of_update_pdr + num_of_update_far) == 0) {
-        ogs_error("sgwc_sxa_build_bearer_to_modify_list: empty modification list detected "
-                  "(remove_pdr=%d remove_far=%d create_pdr=%d create_far=%d update_pdr=%d update_far=%d). "
-                  "Possible empty PFCP Session Modification or race with session delete. Returning NULL.",
-                  num_of_remove_pdr, num_of_remove_far, num_of_create_pdr,
-                  num_of_create_far, num_of_update_pdr, num_of_update_far);
 
-        /* cleanup that would have happened at the function end */
-        if (modify_flags & OGS_PFCP_MODIFY_CREATE) {
-            ogs_pfcp_pdrbuf_clear();
-        }
-        ogs_free(pfcp_message);
-        return NULL;
-    }
-#endif
     pfcp_message->h.type = type;
     pkbuf = ogs_pfcp_build_msg(pfcp_message);
     ogs_expect(pkbuf);
