@@ -621,6 +621,7 @@ void sgwc_s11_handle_modify_bearer_request(
             sess = sgwc_sess_find_by_id(sess_id);
             ogs_assert(sess);
 
+            ogs_debug("sgwc_s11_handle_modify_bearer_request");
             sgwc_pfcp_send_bearer_to_modify_list(sess, pfcp_xact);
         }
     }
@@ -850,6 +851,7 @@ void sgwc_s11_handle_create_bearer_response(
 
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
         if (bearer) {
+            ogs_debug("sgwc_s11_handle_create_bearer_response");
             ogs_assert(OGS_OK ==
                 sgwc_pfcp_send_bearer_modification_request(
                     bearer, OGS_INVALID_POOL_ID, NULL,
@@ -960,6 +962,7 @@ void sgwc_s11_handle_create_bearer_response(
             ogs_error("Invalid User Location Info(ULI)");
     }
 
+    ogs_debug("sgwc_s11_handle_create_bearer_response");
     ogs_assert(OGS_OK ==
         sgwc_pfcp_send_bearer_modification_request(
             bearer, s5c_xact->id, gtpbuf,
@@ -1237,6 +1240,7 @@ void sgwc_s11_handle_delete_bearer_response(
         ogs_debug("    SGW_S5C_TEID[0x%x] PGW_S5C_TEID[0x%x]",
             sess->sgw_s5c_teid, sess->pgw_s5c_teid);
 
+        ogs_debug("sgwc_s11_handle_delete_bearer_response");
         ogs_assert(OGS_OK ==
             sgwc_pfcp_send_bearer_modification_request(
                 bearer, s5c_xact->id, gtpbuf, OGS_PFCP_MODIFY_REMOVE));
@@ -1539,6 +1543,8 @@ void sgwc_s11_handle_delete_indirect_data_forwarding_tunnel_request(
         ogs_pkbuf_t *gtpbuf, ogs_gtp2_message_t *recv_message)
 {
     sgwc_sess_t *sess = NULL;
+    sgwc_bearer_t *bearer = NULL;
+    sgwc_tunnel_t *tunnel = NULL;
     uint8_t cause_value = 0;
 
     ogs_assert(s11_xact);
@@ -1572,18 +1578,38 @@ void sgwc_s11_handle_delete_indirect_data_forwarding_tunnel_request(
         sgwc_ue->mme_s11_teid, sgwc_ue->sgw_s11_teid);
 
     ogs_list_for_each(&sgwc_ue->sess_list, sess) {
+        bool has_indirect = false;
+        ogs_list_for_each(&sess->bearer_list, bearer) {
+            ogs_list_for_each(&bearer->tunnel_list, tunnel) {
+                if (tunnel->interface_type ==
+                        OGS_GTP2_F_TEID_SGW_GTP_U_FOR_DL_DATA_FORWARDING ||
+                    tunnel->interface_type ==
+                        OGS_GTP2_F_TEID_SGW_GTP_U_FOR_UL_DATA_FORWARDING) {
+                    has_indirect = true;
+                    break;
+                }
+            }
+            if (has_indirect) break;
+        }
 
-        if (ogs_list_count(&sess->bearer_list)) {
+        if (has_indirect) {
             ogs_assert(OGS_OK ==
                 sgwc_pfcp_send_session_modification_request(
                     sess, s11_xact->id, gtpbuf,
-                    OGS_PFCP_MODIFY_INDIRECT| OGS_PFCP_MODIFY_REMOVE));
+                    OGS_PFCP_MODIFY_INDIRECT|OGS_PFCP_MODIFY_REMOVE));
         } else {
-            ogs_error("No Bearer");
+            ogs_error("No Indirect Tunnel");
             ogs_error("    UE IMSI[%s] APN[%s]",
                     sgwc_ue->imsi_bcd, sess->session.name);
             ogs_error("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
                     sgwc_ue->mme_s11_teid, sgwc_ue->sgw_s11_teid);
+            ogs_list_for_each(&sess->bearer_list, bearer) {
+                ogs_error("    EBI[%d]", bearer->ebi);
+                ogs_list_for_each(&bearer->tunnel_list, bearer) {
+                    ogs_error("TUNNEL[%d] INF[%d]",
+                            tunnel->id, tunnel->interface_type);
+                }
+            }
         }
     }
 }

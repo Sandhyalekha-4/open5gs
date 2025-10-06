@@ -81,7 +81,9 @@ libmme_sources = files('''
     mme-path.c
     sbc-handler.c
     metrics.c
-    connected_enbs.c
+    enb-info.c
+    ue-info.c
+    ../../lib/metrics/prometheus/json_pager.c
 '''.split())
 
 libmme = static_library('mme',
@@ -92,7 +94,8 @@ libmme = static_library('mme',
                     libnas_eps_dep,
                     libdiameter_s6a_dep,
                     libdiameter_s13_dep,
-                    libgtp_dep],
+		    libgtp_dep,
+		    libsbi_dep],
     install : false)
 
 libmme_dep = declare_dependency(
@@ -103,6 +106,7 @@ libmme_dep = declare_dependency(
                     libnas_eps_dep,
                     libdiameter_s6a_dep,
                     libdiameter_s13_dep,
+		    libsbi_dep,
                     libgtp_dep])
 
 mme_sources = files('''
