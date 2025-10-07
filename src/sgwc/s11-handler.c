@@ -1550,6 +1550,10 @@ void sgwc_s11_handle_delete_indirect_data_forwarding_tunnel_request(
     ogs_assert(s11_xact);
 
     ogs_debug("Delete Indirect Data Forwarding Tunnel Request");
+	
+    /* Track whether we actually found anything to delete */
+    bool any_indirect_tunnel = false;
+	
 
     /************************
      * Check SGWC-UE Context
@@ -1593,11 +1597,12 @@ void sgwc_s11_handle_delete_indirect_data_forwarding_tunnel_request(
         }
 
         if (has_indirect) {
+			any_indirect_tunnel = true;
             ogs_assert(OGS_OK ==
                 sgwc_pfcp_send_session_modification_request(
                     sess, s11_xact->id, gtpbuf,
                     OGS_PFCP_MODIFY_INDIRECT|OGS_PFCP_MODIFY_REMOVE));
-        } else {
+/*        } else {
             ogs_error("No Indirect Tunnel");
             ogs_error("    UE IMSI[%s] APN[%s]",
                     sgwc_ue->imsi_bcd, sess->session.name);
@@ -1609,9 +1614,21 @@ void sgwc_s11_handle_delete_indirect_data_forwarding_tunnel_request(
                     ogs_error("TUNNEL[%d] INF[%d]",
                             tunnel->id, tunnel->interface_type);
                 }
-            }
+            }*/
         }
     }
+	
+
+    /* If none of the sessions had an indirect tunnel, send a single
+     * GTP error response and return immediately. Don’t keep logging/looping. */
+    if (!any_indirect_tunnel) {
+        ogs_warn("No Indirect Tunnel: UE IMSI[%s] MME_S11_TEID[%d] SGW_S11_TEID[%d]",
+                 sgwc_ue->imsi_bcd, sgwc_ue->mme_s11_teid, sgwc_ue->sgw_s11_teid);
+        ogs_gtp_send_error_message(
+            s11_xact, sgwc_ue->mme_s11_teid,
+            OGS_GTP2_DELETE_INDIRECT_DATA_FORWARDING_TUNNEL_RESPONSE_TYPE,
+            OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND);
+    }	
 }
 
 void sgwc_s11_handle_bearer_resource_command(
