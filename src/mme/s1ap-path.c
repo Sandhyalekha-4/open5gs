@@ -28,6 +28,10 @@
 #include "s1ap-build.h"
 #include "s1ap-path.h"
 
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 int s1ap_open(void)
 {
     ogs_socknode_t *node = NULL;
@@ -730,23 +734,47 @@ int s1ap_send_handover_cancel_ack(enb_ue_t *source_ue)
     return rv;
 }
 
-/* helper - returns true if enb has a valid s1 transport address */
+
+/* Check whether an enb (mme_enb_t) has a valid S1 transport address.
+ * This uses the SCTP socket stored in mme_enb_t.sctp.sock and calls
+ * getpeername() on the socket fd to obtain the peer sockaddr.
+ */
 static bool enb_has_valid_s1_addr(mme_enb_t *enb) {
     if (!enb) return false;
-    /* example field names — change to your actual struct members */
-    struct sockaddr_storage *sa = &enb->s1_addr; /* or enb->sctp_addr */
-    if (!sa) return false;
-    if (sa->ss_family == AF_INET) {
-        struct sockaddr_in *a = (struct sockaddr_in*)sa;
+
+    /* Ensure an SCTP socket object exists */
+    if (!enb->sctp.sock) return false;
+
+    /* Obtain the underlying fd. The project wraps sockets, so adjust if names differ. */
+    int fd = -1;
+#if defined(OGS_HAS_SCTP_SOCK_FD)
+    /* If your ogs_sctp_sock_t exposes a sock pointer with fd member */
+    fd = enb->sctp.sock->fd;
+#else
+    /* Fallback: assume same layout (many trees use enb->sctp.sock->fd) */
+    fd = enb->sctp.sock->fd;
+#endif
+    if (fd < 0) return false;
+
+    struct sockaddr_storage peer;
+    socklen_t len = sizeof(peer);
+    if (getpeername(fd, (struct sockaddr *)&peer, &len) != 0) {
+        /* couldn't get peer address (socket not connected / error) */
+        return false;
+    }
+
+    if (peer.ss_family == AF_INET) {
+        struct sockaddr_in *a = (struct sockaddr_in *)&peer;
         if (a->sin_addr.s_addr == INADDR_ANY) return false;
         return true;
-    } else if (sa->ss_family == AF_INET6) {
-        struct sockaddr_in6 *a6 = (struct sockaddr_in6*)sa;
-        /* check not :: or unspecified - simplest check: family present */
+    } else if (peer.ss_family == AF_INET6) {
+        /* For IPv6, accept any non-empty family (no simple IN6ADDR_ANY check here) */
         return true;
     }
+
     return false;
 }
+
 
 int s1ap_send_handover_request(
         enb_ue_t *source_ue, mme_enb_t *target_enb,
