@@ -731,7 +731,7 @@ int s1ap_send_handover_cancel_ack(enb_ue_t *source_ue)
 }
 
 /* helper - returns true if enb has a valid s1 transport address */
-static bool enb_has_valid_s1_addr(enb_t *enb) {
+static bool enb_has_valid_s1_addr(mme_enb_t *enb) {
     if (!enb) return false;
     /* example field names — change to your actual struct members */
     struct sockaddr_storage *sa = &enb->s1_addr; /* or enb->sctp_addr */
