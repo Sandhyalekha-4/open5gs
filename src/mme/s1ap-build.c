@@ -2394,7 +2394,21 @@ ogs_pkbuf_t *s1ap_build_handover_request(
 
             rv = ogs_asn_ip_to_BIT_STRING(
                     &bearer->sgw_s1u_ip, &e_rab->transportLayerAddress);
+#if 0
             ogs_assert(rv == OGS_OK);
+#else
+            if (rv != OGS_OK) {
+                ogs_error("s1ap_build_handover_request: failed to encode transportLayerAddress for EBI[%d] (rv=%d). "
+                          "This likely means no IPv4/IPv6 address available for SGW-S1U.", bearer->ebi, rv);
+                /* Best-effort cleanup of top-level allocation to reduce leak;
+                 * ideally use the project's ASN.1 PDU free helper here if available. */
+                if (pdu.choice.initiatingMessage) {
+                    free(pdu.choice.initiatingMessage);
+                    pdu.choice.initiatingMessage = NULL;
+                }
+                return NULL;
+            }
+#endif	
             ogs_asn_uint32_to_OCTET_STRING(
                     bearer->sgw_s1u_teid, &e_rab->gTP_TEID);
             ogs_debug("    SGW-S1U-TEID[%d]", bearer->sgw_s1u_teid);

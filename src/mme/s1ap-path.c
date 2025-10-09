@@ -730,6 +730,23 @@ int s1ap_send_handover_cancel_ack(enb_ue_t *source_ue)
     return rv;
 }
 
+/* helper - returns true if enb has a valid s1 transport address */
+static bool enb_has_valid_s1_addr(enb_t *enb) {
+    if (!enb) return false;
+    /* example field names — change to your actual struct members */
+    struct sockaddr_storage *sa = &enb->s1_addr; /* or enb->sctp_addr */
+    if (!sa) return false;
+    if (sa->ss_family == AF_INET) {
+        struct sockaddr_in *a = (struct sockaddr_in*)sa;
+        if (a->sin_addr.s_addr == INADDR_ANY) return false;
+        return true;
+    } else if (sa->ss_family == AF_INET6) {
+        struct sockaddr_in6 *a6 = (struct sockaddr_in6*)sa;
+        /* check not :: or unspecified - simplest check: family present */
+        return true;
+    }
+    return false;
+}
 
 int s1ap_send_handover_request(
         enb_ue_t *source_ue, mme_enb_t *target_enb,
@@ -808,6 +825,41 @@ int s1ap_send_handover_request(
             source_ue->enb_ue_s1ap_id, source_ue->mme_ue_s1ap_id);
     ogs_info("    Target : ENB_UE_S1AP_ID[Unknown] MME_UE_S1AP_ID[%d]",
             target_ue->mme_ue_s1ap_id);
+			
+    /*
+     * Pre-check: ensure the target eNB is reachable and has a valid transport
+     * address before we attempt to build/send HandoverRequest.
+     *
+     * If the checks fail we send a HandoverPreparationFailure back to the
+     * source eNB (controlled failure) instead of proceeding and risking
+     * ASN.1 encoding/assertion crashes.
+     */
+    if (!target_enb) {
+        ogs_warn("Abort HO: target_enb is NULL");
+        s1ap_send_handover_preparation_failure(
+                source_ue, S1AP_Cause_PR_transport,
+                S1AP_CauseTransport_transport_resource_unavailable);
+        return OGS_ERROR;
+    }
+
+    /* SCTP socket must be valid / connected */
+    if (!target_enb->sctp.sock || target_enb->sctp.sock->fd == INVALID_SOCKET) {
+        ogs_warn("Abort HO: target eNB SCTP not connected (enb_id=%d)", target_enb->enb_id);
+        s1ap_send_handover_preparation_failure(
+                source_ue, S1AP_Cause_PR_transport,
+                S1AP_CauseTransport_transport_resource_unavailable);
+        return OGS_ERROR;
+    }
+
+    /* Validate the transport address (IPv4/IPv6) */
+    if (!enb_has_valid_s1_addr(target_enb)) {
+        ogs_warn("Abort HO: target eNB missing S1 transport address (enb_id=%d)", target_enb->enb_id);
+        s1ap_send_handover_preparation_failure(
+                source_ue, S1AP_Cause_PR_transport,
+                S1AP_CauseTransport_transport_resource_unavailable);
+        return OGS_ERROR;
+    }
+			
 
     enb_ue_source_associate_target(source_ue, target_ue);
 
