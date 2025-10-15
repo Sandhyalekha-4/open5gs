@@ -104,6 +104,8 @@ int s1ap_send_error_indication2(
 int s1ap_send_s1_reset_ack(
         mme_enb_t *enb,
         S1AP_UE_associatedLogicalS1_ConnectionListRes_t *partOfS1_Interface);
+		
+bool enb_has_valid_s1_addr(mme_enb_t *enb);
 
 #ifdef __cplusplus
 }
