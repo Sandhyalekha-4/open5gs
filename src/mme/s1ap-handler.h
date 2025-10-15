@@ -87,8 +87,6 @@ void s1ap_handle_write_replace_warning_response(
         mme_enb_t *enb, ogs_s1ap_message_t *message);
 void s1ap_handle_kill_response(
         mme_enb_t *enb, ogs_s1ap_message_t *message);
-		
-bool enb_has_valid_s1_addr(mme_enb_t *enb);
 
 #ifdef __cplusplus
 }

@@ -739,7 +739,7 @@ int s1ap_send_handover_cancel_ack(enb_ue_t *source_ue)
  * This uses the SCTP socket stored in mme_enb_t.sctp.sock and calls
  * getpeername() on the socket fd to obtain the peer sockaddr.
  */
-bool enb_has_valid_s1_addr(mme_enb_t *enb) {
+static bool enb_has_valid_s1_addr(mme_enb_t *enb) {
     if (!enb) return false;
 
     /* Ensure an SCTP socket object exists */
