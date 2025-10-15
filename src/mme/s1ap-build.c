@@ -2400,12 +2400,8 @@ ogs_pkbuf_t *s1ap_build_handover_request(
             if (rv != OGS_OK) {
                 ogs_error("s1ap_build_handover_request: failed to encode transportLayerAddress for EBI[%d] (rv=%d). "
                           "This likely means no IPv4/IPv6 address available for SGW-S1U.", bearer->ebi, rv);
-                /* Best-effort cleanup of top-level allocation to reduce leak;
-                 * ideally use the project's ASN.1 PDU free helper here if available. */
-                if (pdu.choice.initiatingMessage) {
-                    free(pdu.choice.initiatingMessage);
-                    pdu.choice.initiatingMessage = NULL;
-                }
+
+				ogs_asn_free(&asn_DEF_S1AP_S1AP_PDU, &pdu.choice.initiatingMessage);
                 return NULL;
             }
 #endif	
