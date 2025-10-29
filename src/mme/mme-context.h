@@ -167,6 +167,9 @@ typedef struct mme_context_s {
         } t3402, t3412, t3423;
     } time;
 
+    /* Control EIR functionality */
+    ogs_nas_eir_t eir;
+
     struct {
         const char *dnn;            /* Emergency APN */
     } emergency;
