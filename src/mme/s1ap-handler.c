@@ -3230,46 +3230,6 @@ void s1ap_handle_enb_configuration_transfer(
     }
 }
 
-/* Check whether an enb (mme_enb_t) has a valid S1 transport address.
- * This uses the SCTP socket stored in mme_enb_t.sctp.sock and calls
- * getpeername() on the socket fd to obtain the peer sockaddr.
- */
-static bool enb_has_valid_s1_addr(mme_enb_t *enb) {
-    if (!enb) return false;
-
-    /* Ensure an SCTP socket object exists */
-    if (!enb->sctp.sock) return false;
-
-    /* Obtain the underlying fd. The project wraps sockets, so adjust if names differ. */
-    int fd = -1;
-#if defined(OGS_HAS_SCTP_SOCK_FD)
-    /* If your ogs_sctp_sock_t exposes a sock pointer with fd member */
-    fd = enb->sctp.sock->fd;
-#else
-    /* Fallback: assume same layout (many trees use enb->sctp.sock->fd) */
-    fd = enb->sctp.sock->fd;
-#endif
-    if (fd < 0) return false;
-
-    struct sockaddr_storage peer;
-    socklen_t len = sizeof(peer);
-    if (getpeername(fd, (struct sockaddr *)&peer, &len) != 0) {
-        /* couldn't get peer address (socket not connected / error) */
-        return false;
-    }
-
-    if (peer.ss_family == AF_INET) {
-        struct sockaddr_in *a = (struct sockaddr_in *)&peer;
-        if (a->sin_addr.s_addr == INADDR_ANY) return false;
-        return true;
-    } else if (peer.ss_family == AF_INET6) {
-        /* For IPv6, accept any non-empty family (no simple IN6ADDR_ANY check here) */
-        return true;
-    }
-
-    return false;
-}
-
 static void s1ap_handle_handover_required_intralte(enb_ue_t *source_ue,
                 S1AP_Cause_t *Cause, S1AP_TargetID_t *TargetID,
                 S1AP_Source_ToTarget_TransparentContainer_t *Source_ToTarget_TransparentContainer)
@@ -3292,19 +3252,22 @@ static void s1ap_handle_handover_required_intralte(enb_ue_t *source_ue,
         break;
     default:
         ogs_error("Not implemented(%d)", TargetID->present);
-        (void)s1ap_send_handover_preparation_failure(
-                source_ue, S1AP_Cause_PR_protocol,
-                S1AP_CauseProtocol_semantic_error);
-        return; /* stop here */
+        r = s1ap_send_handover_preparation_failure(source_ue,
+                S1AP_Cause_PR_protocol, S1AP_CauseProtocol_semantic_error);
+        ogs_expect(r == OGS_OK);
+        ogs_assert(r != OGS_ERROR);
+        return;
     }
 
     target_enb = mme_enb_find_by_enb_id(target_enb_id);
     if (target_enb == NULL) {
         ogs_error("Handover required : cannot find target eNB-id[0x%x]",
                     target_enb_id);
-        (void)s1ap_send_handover_preparation_failure(
-                source_ue, S1AP_Cause_PR_radioNetwork,
+        r = s1ap_send_handover_preparation_failure(source_ue,
+                S1AP_Cause_PR_radioNetwork,
                 S1AP_CauseRadioNetwork_unknown_targetID);
+        ogs_expect(r == OGS_OK);
+        ogs_assert(r != OGS_ERROR);
         return;
     }
 
@@ -3316,9 +3279,28 @@ static void s1ap_handle_handover_required_intralte(enb_ue_t *source_ue,
 
     if (!SECURITY_CONTEXT_IS_VALID(mme_ue)) {
         ogs_error("No Security Context");
-        (void)s1ap_send_handover_preparation_failure(
-                source_ue, S1AP_Cause_PR_nas,
-                S1AP_CauseNas_authentication_failure);
+        r = s1ap_send_handover_preparation_failure(source_ue,
+                S1AP_Cause_PR_nas, S1AP_CauseNas_authentication_failure);
+        ogs_expect(r == OGS_OK);
+        ogs_assert(r != OGS_ERROR);
+        return;
+    }
+
+    if (!SESSION_CONTEXT_IS_AVAILABLE(mme_ue)) {
+        ogs_error("No Session Context : IMSI[%s]", mme_ue->imsi_bcd);
+        r = s1ap_send_handover_preparation_failure(source_ue,
+                S1AP_Cause_PR_nas, S1AP_CauseNas_authentication_failure);
+        ogs_expect(r == OGS_OK);
+        ogs_assert(r != OGS_ERROR);
+        return;
+    }
+
+    if (!ACTIVE_EPS_BEARERS_IS_AVAIABLE(mme_ue)) {
+        ogs_error("No active EPS bearers : IMSI[%s]", mme_ue->imsi_bcd);
+        r = s1ap_send_handover_preparation_failure(source_ue,
+                S1AP_Cause_PR_nas, S1AP_CauseNas_authentication_failure);
+        ogs_expect(r == OGS_OK);
+        ogs_assert(r != OGS_ERROR);
         return;
     }
 
@@ -3327,29 +3309,11 @@ static void s1ap_handle_handover_required_intralte(enb_ue_t *source_ue,
     mme_ue->nhcc++;
     ogs_kdf_nh_enb(mme_ue->kasme, mme_ue->nh, mme_ue->nh);
 
-    /* ---- PRECHECK: target eNB must be reachable and have an S1 address ---- */
-    if (!target_enb->sctp.sock) {
-        ogs_warn("Abort HO: target eNB SCTP socket missing");
-        (void)s1ap_send_handover_preparation_failure(
-                source_ue, S1AP_Cause_PR_transport,
-                S1AP_CauseTransport_transport_resource_unavailable);
-        return;
-    }
-    if (!enb_has_valid_s1_addr(target_enb)) {
-        ogs_warn("Abort HO: target eNB has no valid S1 address");
-        (void)s1ap_send_handover_preparation_failure(
-                source_ue, S1AP_Cause_PR_transport,
-                S1AP_CauseTransport_transport_resource_unavailable);
-        return;
-    }
-
     r = s1ap_send_handover_request(
             source_ue, target_enb, &source_ue->handover_type, Cause,
             Source_ToTarget_TransparentContainer);
-    if (r != OGS_OK) {
-        ogs_warn("s1ap_send_handover_request failed — already sent/handled failure");
-        return;
-    }
+    ogs_expect(r == OGS_OK);
+    ogs_assert(r != OGS_ERROR);
 }
 
 void s1ap_handle_handover_required(mme_enb_t *enb, ogs_s1ap_message_t *message)
