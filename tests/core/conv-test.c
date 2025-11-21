@@ -26,7 +26,7 @@ static void conv_test2(abts_case *tc, void *data)
 #define OP "5F1D289C  5D354D0A 140C2548   F5F3E3BA"
 #define OPc "E8ED2 89D EBA9 52E4 283B 54E8 8E61 83CA"
 #define AMF "8000"
-   uint8_t k[16] = {
+    uint8_t k[16] = {
         0x46, 0x5B, 0x5C, 0xE8, 0xB1, 0x99, 0xB4, 0x9F,
         0xAA, 0x5F, 0x0A, 0x2E, 0xE2, 0x38, 0xA6, 0xBC };
     uint8_t op[16] = {
@@ -59,7 +59,7 @@ static void conv_test2(abts_case *tc, void *data)
 
 static void conv_test3(abts_case *tc, void *data)
 {
-   uint8_t k[16] = {
+    uint8_t k[16] = {
         0x46, 0x5B, 0x5C, 0xE8, 0xB1, 0x99, 0xB4, 0x9F,
         0xAA, 0x5F, 0x0A, 0x2E, 0xE2, 0x38, 0xA6, 0xBC };
     uint8_t op[16] = {
