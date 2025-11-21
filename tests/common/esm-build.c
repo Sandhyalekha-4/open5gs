@@ -427,7 +427,7 @@ ogs_pkbuf_t *testesm_build_bearer_resource_allocation_request(
     ogs_nas_eps_quality_of_service_t *required_traffic_flow_qos =
         &bearer_resource_allocation_request->required_traffic_flow_qos;
 
-    uint8_t tft[4] = "\x21\x20\x01\x00";
+    uint8_t tft[4] = { 0x21, 0x20, 0x01, 0x00 };
 
     test_ue_t *test_ue = NULL;
     test_sess_t *sess = NULL;
