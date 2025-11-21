@@ -585,7 +585,7 @@ ogs_pfcp_pdr_t *ogs_pfcp_handle_create_pdr(ogs_pfcp_sess_t *sess,
                 ogs_pfcp_rule_remove(rule);
                 continue;
             }
-            
+
             ogs_free(flow_description);
 /*
  *
