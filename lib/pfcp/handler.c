@@ -578,7 +578,7 @@ ogs_pfcp_pdr_t *ogs_pfcp_handle_create_pdr(ogs_pfcp_sess_t *sess,
 
             rv = ogs_ipfw_compile_rule(&rule->ipfw, flow_description);
 
-             if (rv != OGS_OK) {
+            if (rv != OGS_OK) {
                 ogs_error("ogs_ipfw_compile_rule() failed [%s]",
                         flow_description);
                 ogs_free(flow_description);
@@ -586,7 +586,6 @@ ogs_pfcp_pdr_t *ogs_pfcp_handle_create_pdr(ogs_pfcp_sess_t *sess,
                 continue;
             }
             
-
             ogs_free(flow_description);
 /*
  *
@@ -997,9 +996,9 @@ ogs_pfcp_pdr_t *ogs_pfcp_handle_update_pdr(ogs_pfcp_sess_t *sess,
                 pdr->dnn = ogs_strdup(dnn);
                 ogs_assert(pdr->dnn);
             } else {
-                  ogs_error("Invalid pdi.network_instance [%d]",
+                ogs_error("Invalid pdi.network_instance [%d]",
                         message->pdi.network_instance.len);
-                  ogs_log_hexdump(OGS_LOG_ERROR,
+                ogs_log_hexdump(OGS_LOG_ERROR,
                         message->pdi.network_instance.data,
                         message->pdi.network_instance.len);
             }
@@ -1337,7 +1336,7 @@ ogs_pfcp_qer_t *ogs_pfcp_handle_create_qer(ogs_pfcp_sess_t *sess,
     memset(&qer->mbr, 0, sizeof(qer->mbr));
     memset(&qer->gbr, 0, sizeof(qer->gbr));
 
-     if (message->maximum_bitrate.presence) {
+    if (message->maximum_bitrate.presence) {
         rv = ogs_pfcp_parse_bitrate(&qer->mbr, &message->maximum_bitrate);
         if (rv != OGS_PFCP_BITRATE_LEN) {
             ogs_error("MBR: ogs_pfcp_parse_bitrate() failed");
@@ -1369,7 +1368,7 @@ ogs_pfcp_qer_t *ogs_pfcp_handle_update_qer(ogs_pfcp_sess_t *sess,
         ogs_pfcp_tlv_update_qer_t *message,
         uint8_t *cause_value, uint8_t *offending_ie_value)
 {
-     int rv;
+    int rv;
     ogs_pfcp_qer_t *qer = NULL;
 
     ogs_assert(message);
@@ -1393,7 +1392,7 @@ ogs_pfcp_qer_t *ogs_pfcp_handle_update_qer(ogs_pfcp_sess_t *sess,
         return NULL;
     }
 
-      if (message->maximum_bitrate.presence) {
+    if (message->maximum_bitrate.presence) {
         rv = ogs_pfcp_parse_bitrate(&qer->mbr, &message->maximum_bitrate);
         if (rv != OGS_PFCP_BITRATE_LEN) {
             ogs_error("MBR: ogs_pfcp_parse_bitrate() failed");
