@@ -1097,9 +1097,9 @@ void emm_state_authentication(ogs_fsm_t *s, mme_event_t *e)
             ogs_log_hexdump(OGS_LOG_ERROR, e->pkbuf->data, e->pkbuf->len);
             break;
         }
-        
+
         xact_count = mme_ue_xact_count(mme_ue, OGS_GTP_LOCAL_ORIGINATOR);
-        
+
         switch (message->emm.h.message_type) {
         case OGS_NAS_EPS_AUTHENTICATION_RESPONSE:
             rv = emm_handle_authentication_response(enb_ue, mme_ue,
@@ -1298,8 +1298,9 @@ void emm_state_security_mode(ogs_fsm_t *s, mme_event_t *e)
             ogs_log_hexdump(OGS_LOG_ERROR, e->pkbuf->data, e->pkbuf->len);
             break;
         }
-        
+
         xact_count = mme_ue_xact_count(mme_ue, OGS_GTP_LOCAL_ORIGINATOR);
+
         if (message->emm.h.security_header_type
                 == OGS_NAS_SECURITY_HEADER_FOR_SERVICE_REQUEST_MESSAGE) {
             ogs_debug("Service request");
@@ -1432,6 +1433,7 @@ void emm_state_security_mode(ogs_fsm_t *s, mme_event_t *e)
                     xact_count) {
                 mme_s6a_send_air(enb_ue, mme_ue, NULL);
             }
+
             OGS_FSM_TRAN(s, &emm_state_authentication);
             break;
         case OGS_NAS_EPS_TRACKING_AREA_UPDATE_REQUEST:
