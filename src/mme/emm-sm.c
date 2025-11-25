@@ -1172,6 +1172,7 @@ void emm_state_authentication(ogs_fsm_t *s, mme_event_t *e)
                     xact_count) {
                 mme_s6a_send_air(enb_ue, mme_ue, NULL);
             }
+
             OGS_FSM_TRAN(s, &emm_state_authentication);
             break;
         case OGS_NAS_EPS_EMM_STATUS:
