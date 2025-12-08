@@ -1349,7 +1349,10 @@ ogs_pfcp_pdr_t *ogs_pfcp_pdr_find_or_add(
     pdr = ogs_pfcp_pdr_find(sess, id);
     if (!pdr) {
         pdr = ogs_pfcp_pdr_add(sess);
-        ogs_assert(pdr);
+        if (!pdr) {
+            ogs_error("ogs_pfcp_pdr_add() failed");
+            return NULL;
+        }
         pdr->id = id;
     }
 
@@ -1399,7 +1402,7 @@ int ogs_pfcp_pdr_swap_teid(ogs_pfcp_pdr_t *pdr)
     return OGS_PFCP_CAUSE_REQUEST_ACCEPTED;
 }
 
-void ogs_pfcp_object_teid_hash_set(
+uint8_t ogs_pfcp_object_teid_hash_set(
         ogs_pfcp_object_type_e type, ogs_pfcp_pdr_t *pdr,
         bool restoration_indication)
 {
@@ -1429,12 +1432,20 @@ void ogs_pfcp_object_teid_hash_set(
                     &ogs_gtp_self()->gtpu_resource_list,
                     pdr->dnn, pdr->src_if);
             if (resource) {
-                ogs_assert(
-                    (resource->info.v4 && pdr->f_teid.ipv4) ||
-                    (resource->info.v6 && pdr->f_teid.ipv6));
-                ogs_assert(OGS_OK ==
-                    ogs_pfcp_user_plane_ip_resource_info_to_f_teid(
-                    &resource->info, &pdr->f_teid, &pdr->f_teid_len));
+                  if (!((resource->info.v4 && pdr->f_teid.ipv4) ||
+                      (resource->info.v6 && pdr->f_teid.ipv6))) {
+                    ogs_error("CH F-TEID address family mismatch: "
+                            "resource[v4:%d v6:%d] fteid[v4:%d v6:%d]",
+                            resource->info.v4, resource->info.v6,
+                            pdr->f_teid.ipv4, pdr->f_teid.ipv6);
+                    return OGS_PFCP_CAUSE_REQUEST_REJECTED;
+                }
+                if (OGS_OK != ogs_pfcp_user_plane_ip_resource_info_to_f_teid(
+                        &resource->info, &pdr->f_teid, &pdr->f_teid_len)) {
+                    ogs_error("user_plane_ip_resource_info_to_f_teid() "
+                            "failed in CH path");
+                    return OGS_PFCP_CAUSE_REQUEST_REJECTED;
+                }
                 if (resource->info.teidri)
                     pdr->f_teid.teid = OGS_PFCP_GTPU_INDEX_TO_TEID(
                             pdr->teid, resource->info.teidri,
@@ -1442,16 +1453,28 @@ void ogs_pfcp_object_teid_hash_set(
                 else
                     pdr->f_teid.teid = pdr->teid;
             } else {
-                ogs_assert(
-                    (ogs_gtp_self()->gtpu_addr && pdr->f_teid.ipv4) ||
-                    (ogs_gtp_self()->gtpu_addr6 && pdr->f_teid.ipv6));
-                ogs_assert(OGS_OK ==
+               
+                    if (!((ogs_gtp_self()->gtpu_addr && pdr->f_teid.ipv4) ||
+                    (ogs_gtp_self()->gtpu_addr6 && pdr->f_teid.ipv6))) {
+                    ogs_error("CH F-TEID address family mismatch with local "
+                            "GTP-U address: gtpu[v4:%p v6:%p] "
+                            "fteid[v4:%d v6:%d]",
+                            ogs_gtp_self()->gtpu_addr,
+                            ogs_gtp_self()->gtpu_addr6,
+                            pdr->f_teid.ipv4, pdr->f_teid.ipv6);
+                    return OGS_PFCP_CAUSE_REQUEST_REJECTED;
+                }
+                 if (OGS_OK !=
                     ogs_pfcp_sockaddr_to_f_teid(
                         pdr->f_teid.ipv4 ?
                             ogs_gtp_self()->gtpu_addr : NULL,
                         pdr->f_teid.ipv6 ?
                             ogs_gtp_self()->gtpu_addr6 : NULL,
-                        &pdr->f_teid, &pdr->f_teid_len));
+                         &pdr->f_teid, &pdr->f_teid_len)) {
+                        ogs_error("ogs_pfcp_sockaddr_to_f_teid() "
+                            "failed in CH path");
+                        return OGS_PFCP_CAUSE_REQUEST_REJECTED;
+                }
                 pdr->f_teid.teid = pdr->teid;
             }
         }
