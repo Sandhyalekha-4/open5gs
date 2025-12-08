@@ -17,70 +17,77 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef AMF_NAS_5GS_PATH_H
-#define AMF_NAS_5GS_PATH_H
+#ifndef NGAP_PATH_H
+#define NGAP_PATH_H
 
-#include "gmm-build.h"
+#include "ngap-build.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define AMF_NAS_BACKOFF_TIME  6    /* 6 seconds */
+#define NGAP_NON_UE_SIGNALLING   0
 
-int nas_5gs_send_to_gnb(amf_ue_t *amf_ue, ogs_pkbuf_t *pkbuf);
-int nas_5gs_send_to_downlink_nas_transport(
-        ran_ue_t *ran_ue, amf_ue_t *amf_ue, ogs_pkbuf_t *pkbuf);
+#define ngap_event_push  amf_sctp_event_push
 
-int nas_5gs_send_registration_accept(amf_ue_t *amf_ue);
-int nas_5gs_send_registration_reject(
-        ran_ue_t *ran_ue, amf_ue_t *amf_ue, ogs_nas_5gmm_cause_t gmm_cause);
+int ngap_open(void);
+void ngap_close(void);
 
-int nas_5gs_send_service_accept(amf_ue_t *amf_ue);
-int nas_5gs_send_service_reject(
-        ran_ue_t *ran_ue, amf_ue_t *amf_ue, ogs_nas_5gmm_cause_t gmm_cause);
+ogs_sock_t *ngap_server(ogs_socknode_t *node);
+void ngap_recv_upcall(short when, ogs_socket_t fd, void *data);
 
-int nas_5gs_send_de_registration_accept(amf_ue_t *amf_ue);
-int nas_5gs_send_de_registration_request(
-        amf_ue_t *amf_ue,
-        OpenAPI_deregistration_reason_e dereg_reason,
-        ogs_nas_5gmm_cause_t gmm_cause);
+int ngap_send_to_gnb(
+        amf_gnb_t *gnb, ogs_pkbuf_t *pkb, uint16_t stream_no);
+int ngap_send_to_ran_ue(ran_ue_t *ran_ue, ogs_pkbuf_t *pkbuf);
+int ngap_delayed_send_to_ran_ue(ran_ue_t *ran_ue,
+        ogs_pkbuf_t *pkbuf, ogs_time_t duration);
+int ngap_send_to_nas(ran_ue_t *ran_ue,
+        NGAP_ProcedureCode_t procedureCode, NGAP_NAS_PDU_t *nasPdu);
+int ngap_send_to_5gsm(amf_ue_t *amf_ue, ogs_pkbuf_t *esmbuf);
 
-int nas_5gs_send_identity_request(amf_ue_t *amf_ue);
+int ngap_send_ng_setup_response(amf_gnb_t *gnb);
+int ngap_send_ng_setup_failure(
+        amf_gnb_t *gnb, NGAP_Cause_PR group, long cause);
+int ngap_send_amf_configuration_update(amf_gnb_t *gnb);
+void ngap_send_amf_configuration_update_all(void);
+int ngap_send_ran_configuration_update_ack(amf_gnb_t *gnb);
+int ngap_send_ran_configuration_update_failure(
+        amf_gnb_t *gnb, NGAP_Cause_PR group, long cause);
 
-int nas_5gs_send_authentication_request(amf_ue_t *amf_ue);
-int nas_5gs_send_authentication_reject(amf_ue_t *amf_ue);
+int ngap_send_ran_ue_context_release_command(
+    ran_ue_t *ran_ue, NGAP_Cause_PR group, long cause,
+    uint8_t action, ogs_time_t duration);
 
-int nas_5gs_send_security_mode_command(amf_ue_t *amf_ue);
+int ngap_send_paging(amf_ue_t *amf_ue);
 
-int nas_5gs_send_configuration_update_command(
-        amf_ue_t *amf_ue, gmm_configuration_update_command_param_t *param);
+int ngap_send_downlink_ran_configuration_transfer(
+        amf_gnb_t *target_gnb, NGAP_SONConfigurationTransfer_t *transfer);
 
-int nas_send_pdu_session_setup_request(amf_sess_t *sess,
-        ogs_pkbuf_t *n1smbuf, ogs_pkbuf_t *n2smbuf);
-int nas_send_pdu_session_modification_command(amf_sess_t *sess,
-        ogs_pkbuf_t *n1smbuf, ogs_pkbuf_t *n2smbuf);
-int nas_send_pdu_session_release_command(amf_sess_t *sess,
-        ogs_pkbuf_t *n1smbuf, ogs_pkbuf_t *n2smbuf);
+int ngap_send_path_switch_ack(amf_sess_t *sess);
 
-int nas_5gs_send_gmm_status(amf_ue_t *amf_ue, ogs_nas_5gmm_cause_t cause);
+int ngap_send_handover_request(amf_ue_t *amf_ue);
+int ngap_send_handover_preparation_failure(
+        ran_ue_t *source_ue, NGAP_Cause_t *cause);
+int ngap_send_handover_command(amf_ue_t *amf_ue);
+int ngap_send_handover_cancel_ack(ran_ue_t *source_ue);
 
-int nas_5gs_send_gmm_reject(
-        ran_ue_t *ran_ue, amf_ue_t *amf_ue, ogs_nas_5gmm_cause_t gmm_cause);
-int nas_5gs_send_gmm_reject_from_sbi(amf_ue_t *amf_ue, int status);
+int ngap_send_downlink_ran_status_transfer(
+        ran_ue_t *target_ue,
+        NGAP_RANStatusTransfer_TransparentContainer_t *transfer);
 
-int nas_5gs_send_dl_nas_transport(ran_ue_t *ran_ue, amf_sess_t *sess,
-        uint8_t payload_container_type, ogs_pkbuf_t *payload_container,
-        ogs_nas_5gmm_cause_t cause, uint8_t backoff_time);
-
-int nas_5gs_send_gsm_reject(ran_ue_t *ran_ue, amf_sess_t *sess,
-        uint8_t payload_container_type, ogs_pkbuf_t *payload_container);
-int nas_5gs_send_back_gsm_message(
-        ran_ue_t *ran_ue, amf_sess_t *sess,
-        ogs_nas_5gmm_cause_t cause, uint8_t backoff_time);
+int ngap_send_error_indication(
+        amf_gnb_t *gnb,
+        uint64_t *ran_ue_ngap_id,
+        uint64_t *amf_ue_ngap_id,
+        NGAP_Cause_PR group, long cause);
+int ngap_send_error_indication2(
+        ran_ue_t *ran_ue, NGAP_Cause_PR group, long cause);
+int ngap_send_ng_reset_ack(
+        amf_gnb_t *gnb,
+        NGAP_UE_associatedLogicalNG_connectionList_t *partOfNG_Interface);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* AMF_NAS_5GS_PATH_H */
+#endif /* NGAP_PATH_H */
