@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2024 by Sukchan Lee <acetcom@gmail.com>
+ * Copyright (C) 2019 by Sukchan Lee <acetcom@gmail.com>
  *
  * This file is part of Open5GS.
  *
@@ -17,722 +17,776 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#if !defined(OGS_PROTO_INSIDE) && !defined(OGS_PROTO_COMPILATION)
+#if !defined(OGS_PFCP_INSIDE) && !defined(OGS_PFCP_COMPILATION)
 #error "This header cannot be included directly."
 #endif
 
-#ifndef OGS_PROTO_TYPES_H
-#define OGS_PROTO_TYPES_H
+#ifndef OGS_PFCP_TYPES_H
+#define OGS_PFCP_TYPES_H
 
 #ifdef __cplusplus
 extern "C" {
-#endif /* __cplusplus */
+#endif
 
-#define OGS_MAX_NUM_OF_SESS             4   /* Num of APN(Session) per UE */
-#define OGS_MAX_NUM_OF_BEARER           4   /* Num of Bearer per Session */
-#define OGS_BEARER_PER_UE               8   /* Num of Bearer per UE */
-#define OGS_MAX_NUM_OF_GTPU_BUFFER      64  /* Num of GTPU Buffer per UE */
+#define OGS_PFCP_VERSION                                    1
 
-/*
- * TS24.008
- * 10.5.6.12 Traffic Flow Template
- * Table 10.5.162: Traffic flow template information element
- *
- * Number of packet filters (octet 3)
- * The number of packet filters contains the binary coding
- * for the number of packet filters in the packet filter list.
- * The number of packet filters field is encoded in bits 4
- * through 1 of octet 3 where bit 4 is the most significant
- * and bit 1 is the least significant bit.
- *
- * For the "delete existing TFT" operation and
- * for the "no TFT operation", the number of packet filters shall be
- * coded as 0. For all other operations, the number of packet filters
- * shall be greater than 0 and less than or equal to 15.
- *
- * TS24.501
- * 9.11.4.13 QoS rules
- * Table 9.11.4.13.1: QoS rules information element
- *
- * For the "delete existing QoS rule" operation and for the "modify existing
- * QoS rule without modifying packet filters" operation, the number of packet
- * filters shall be coded as 0. For the "create new QoS rule" operation
- * and the "modify existing QoS rule and replace all packet filters" operation,
- * the number of packet filters shall be greater than or equal to 0
- * and less than or equal to 15. For all other operations, the number of packet
- * filters shall be greater than 0 and less than or equal to 15.
- *
- * The array of TLV messages is limited to 15.
- * So, Flow(PDI.SDF_Filter) in PDR is limited to 15.
- *
- * Therefore, we defined the maximum number of flows as 15.
- */
-#define OGS_MAX_NUM_OF_FLOW_IN_PDR      15
-#define OGS_MAX_NUM_OF_FLOW_IN_GTP      OGS_MAX_NUM_OF_FLOW_IN_PDR
-#define OGS_MAX_NUM_OF_FLOW_IN_NAS      OGS_MAX_NUM_OF_FLOW_IN_PDR
-#define OGS_MAX_NUM_OF_FLOW_IN_PCC_RULE OGS_MAX_NUM_OF_FLOW_IN_PDR
-#define OGS_MAX_NUM_OF_FLOW_IN_MEDIA_SUB_COMPONENT OGS_MAX_NUM_OF_FLOW_IN_PDR
-#define OGS_MAX_NUM_OF_FLOW_IN_BEARER   15
+typedef uint16_t ogs_pfcp_pdr_id_t;
+typedef uint32_t ogs_pfcp_far_id_t;
+typedef uint32_t ogs_pfcp_urr_id_t;
+typedef uint32_t ogs_pfcp_qer_id_t;
+typedef uint8_t  ogs_pfcp_bar_id_t;
 
-#define OGS_MAX_NUM_OF_GTPU_RESOURCE    4
-#define OGS_MAX_NUM_OF_FRAMED_ROUTES_IN_PDI 8
+#define OGS_PFCP_CAUSE_REQUEST_ACCEPTED                     1
+#define OGS_PFCP_CAUSE_MORE_USAGE_REPORT_TO_SEND            2
+#define OGS_PFCP_CAUSE_REQUEST_REJECTED                     64
+#define OGS_PFCP_CAUSE_SESSION_CONTEXT_NOT_FOUND            65
+#define OGS_PFCP_CAUSE_MANDATORY_IE_MISSING                 66
+#define OGS_PFCP_CAUSE_CONDITIONAL_IE_MISSING               67
+#define OGS_PFCP_CAUSE_INVALID_LENGTH                       68
+#define OGS_PFCP_CAUSE_MANDATORY_IE_INCORRECT               69
+#define OGS_PFCP_CAUSE_INVALID_FORWARDING_POLICY            70
+#define OGS_PFCP_CAUSE_INVALID_F_TEID_ALLOCATION_OPTION     71
+#define OGS_PFCP_CAUSE_NO_ESTABLISHED_PFCP_ASSOCIATION      72
+#define OGS_PFCP_CAUSE_RULE_CREATION_MODIFICATION_FAILURE   73
+#define OGS_PFCP_CAUSE_PFCP_ENTITY_IN_CONGESTION            74
+#define OGS_PFCP_CAUSE_NO_RESOURCES_AVAILABLE               75
+#define OGS_PFCP_CAUSE_SERVICE_NOT_SUPPORTED                76
+#define OGS_PFCP_CAUSE_SYSTEM_FAILURE                       77
+#define OGS_PFCP_CAUSE_REDIRECTION_REQUESTED                78
+#define OGS_PFCP_CAUSE_ALL_DYNAMIC_ADDRESS_ARE_OCCUPIED     79
 
-#define OGS_PLMN_ID_LEN                 3
-#define OGS_MAX_PLMN_ID_BCD_LEN         6
-
-#define OGS_CHRGCHARS_LEN               2
-
-#define OGS_MSIN_LEN                    5
-
-#define OGS_BCD_TO_BUFFER_LEN(x)        (((x)+1)/2)
-#define OGS_MAX_IMSI_BCD_LEN            15
-#define OGS_MAX_IMSI_LEN                \
-    OGS_BCD_TO_BUFFER_LEN(OGS_MAX_IMSI_BCD_LEN)
-
-#define OGS_MAX_IMEISV_BCD_LEN          16
-#define OGS_MAX_IMEISV_LEN              \
-    OGS_BCD_TO_BUFFER_LEN(OGS_MAX_IMEISV_BCD_LEN)
-
-#define OGS_MAX_MSISDN_BCD_LEN          15
-#define OGS_MAX_MSISDN_LEN              \
-    OGS_BCD_TO_BUFFER_LEN(OGS_MAX_MSISDN_BCD_LEN)
-
-#define OGS_MAX_NUM_OF_CELL_ID          16
-#define OGS_MAX_NUM_OF_ENB_ID           16
-#define OGS_MAX_NUM_OF_DNN              16
-#define OGS_MAX_NUM_OF_APN              OGS_MAX_NUM_OF_DNN
-#define OGS_MAX_NUM_OF_HOSTNAME         16
-#define OGS_MAX_DNN_LEN                 100
-#define OGS_MAX_APN_LEN                 OGS_MAX_DNN_LEN
-#define OGS_MAX_PCO_LEN                 251
-#define OGS_MAX_EPCO_LEN                65535
-#define OGS_MAX_FQDN_LEN                256
-
-#define OGS_MAX_NUM_OF_ALGORITHM        8
-
-#define OGS_MAX_5G_GUTI_LEN             28
-
-#define OGS_MAX_NUM_OF_SERVED_GUMMEI    8   /* maxnoofRATs: 8 */
-#define OGS_MAX_NUM_OF_SERVED_GUAMI     256 /* maxnoofServedGUAMIs: 256 */
-#define OGS_MAX_NUM_OF_SUPPORTED_TA     256 /* maxnoofTACs: 256 */
+const char *ogs_pfcp_cause_get_name(uint8_t cause);
 
 /*
- * <December 3, 2023>
- * If I set it to 1024, the AMF crashes in the 'meson test -v registration'.
- * So for now, I will use 512. Once I figure out the cause of this problem,
- * I will try 1024.
+ * 8.2.11 Precedence
  *
- * <December 4, 2023>
- * After increasing the delay in test/app/5gc-init.c from 300ms to 500ms,
- * the problem has been resolved. It seems that as the context memory increases,
- * it takes time for the AMF execution to be completed."
+ * The Precedence value shall be encoded as an Unsigned32 binary integer value. The lower precedence values
+ * indicate higher precedence of the PDR, and the higher precedence values
+ * indicate lower precedence of the PDR when matching a packet.
  */
-#define OGS_MAX_NUM_OF_SLICE_SUPPORT    1024 /* maxnoofSliceItems: 1024 */
+typedef uint32_t ogs_pfcp_precedence_t;
 
-#define OGS_MAX_NUM_OF_PLMN_PER_MME     32  /* maxnoofPLMNs(MME): 32 */
-#define OGS_MAX_NUM_OF_PLMN             12  /* maxnoofPLMNs(AMF): 12 */
-#define OGS_MAX_NUM_OF_BPLMN            OGS_MAX_NUM_OF_PLMN
+/*
+ * 8.2.2 Source Interface
+ * NOTE 1: The "Access" and "Core" values denote an uplink and downlink
+ * traffic direction respectively.
+ * NOTE 2: For indirect data forwarding, the Source Interface in the PDR and
+ * the Destination Interface in the FAR shall both be set to "Access",
+ * in the forwarding SGW(s). The Interface value does not infer any
+ * traffic direction, in PDRs and FARs set up for indirect data
+ * forwarding, i.e. with both the Source and Destination Interfaces set
+ * to Access.
+ *
+ * 8.2.24 Destination Interface
+ * NOTE 1: The "Access" and "Core" values denote a downlink and uplink
+ * traffic direction respectively.
+ * NOTE 2: LI Function may denote an SX3LIF or an LMISF. See clause 5.7.
+ * NOTE 3: For indirect data forwarding, the Source Interface in the PDR and
+ * the Destination Interface in the FAR shall both be set to "Access",
+ * in the forwarding SGW(s). The Interface value does not infer any
+ * traffic direction, in PDRs and FARs set up for indirect data
+ * forwarding, i.e. with both the Source and Destination Interfaces set
+ * to Access.
+ * NOTE 4: For a HTTP redirection, the Source Interface in the PDR to match
+ * the uplink packets to be redirected and the Destination Interface in
+ * the FAR to enable the HTTP redirection shall both be set to "Access".
+ */
+#define OGS_PFCP_INTERFACE_ACCESS                           0
+#define OGS_PFCP_INTERFACE_CORE                             1
+#define OGS_PFCP_INTERFACE_SGI_N6_LAN                       2
+#define OGS_PFCP_INTERFACE_CP_FUNCTION                      3
+#define OGS_PFCP_INTERFACE_LI_FUNCTION                      4
+#define OGS_PFCP_INTERFACE_UNKNOWN                          0xff
+typedef uint8_t  ogs_pfcp_interface_t;
 
-#define OGS_MAX_NUM_OF_TAI              16
-#define OGS_MAX_NUM_OF_SLICE            8
+/* 8.2.25 UP Function Features */
 
-#define OGS_NEXT_ID(__id, __min, __max) \
-    ((__id) = ((__id) == (__max) ? (__min) : ((__id) + 1)))
-#define OGS_COMPARE_ID(__id1, __id2, __max) \
-    ((__id2) > (__id1) ? ((__id2) - (__id1) < ((__max)-1) ? -1 : 1) : \
-     (__id1) > (__id2) ? ((__id1) - (__id2) < ((__max)-1) ? 1 : -1) : 0)
-
-#define OGS_TIME_TO_BCD(x) \
-    (((((x) % 10) << 4) & 0xf0) | (((x) / 10) & 0x0f))
-
-/* 3GPP TS 24.007 Table 11.6: */
-#define OGS_NAS_PROCEDURE_TRANSACTION_IDENTITY_UNASSIGNED 0
-/* 3GPP TS 24.007 Table 11.2.3.1c.1: */
-#define OGS_NAS_PDU_SESSION_IDENTITY_UNASSIGNED 0
-
-#define OGS_ACCESS_TYPE_3GPP 1
-#define OGS_ACCESS_TYPE_NON_3GPP 2
-#define OGS_ACCESS_TYPE_BOTH_3GPP_AND_NON_3GPP 3
-
-#define OGS_MAX_QOS_FLOW_ID             63
-
-#define OGS_IMSI_STRING "imsi"
-#define OGS_MSISDN_STRING "msisdn"
-#define OGS_IMEISV_STRING "imeisv"
-
-#define OGS_ACCESS_RESTRICTION_DATA_STRING "access_restriction_data"
-#define OGS_SUBSCRIBER_STATUS_STRING "subscriber_status"
-#define OGS_OPERATOR_DETERMINED_BARRING_STRING "operator_determined_barring"
-#define OGS_NETWORK_ACCESS_MODE_STRING "network_access_mode"
-#define OGS_SUBSCRIBED_RAU_TAU_TIMER_STRING "subscribed_rau_tau_timer"
-
-#define OGS_SECURITY_STRING "security"
-#define OGS_K_STRING "k"
-#define OGS_OPC_STRING "opc"
-#define OGS_OP_STRING "op"
-#define OGS_AMF_STRING "amf"
-#define OGS_RAND_STRING "rand"
-#define OGS_SQN_STRING "sqn"
-
-#define OGS_MME_HOST_STRING "mme_host"
-#define OGS_MME_REALM_STRING "mme_realm"
-#define OGS_MME_TIMESTAMP_STRING "mme_timestamp"
-#define OGS_PURGE_FLAG_STRING "purge_flag"
-
-#define OGS_AMBR_STRING "ambr"
-#define OGS_DOWNLINK_STRING "downlink"
-#define OGS_UPLINK_STRING "uplink"
-#define OGS_VALUE_STRING "value"
-#define OGS_UNIT_STRING "unit"
-
-#define OGS_POLICY_STRING "policy"
-#define OGS_SLICE_STRING "slice"
-#define OGS_SST_STRING "sst"
-#define OGS_SD_STRING "sd"
-#define OGS_DEFAULT_INDICATOR_STRING "default_indicator"
-#define OGS_SESSION_STRING "session"
-#define OGS_NAME_STRING "name"
-#define OGS_TYPE_STRING "type"
-#define OGS_LBO_ROAMING_ALLOWED_STRING "lbo_roaming_allowed"
-#define OGS_QOS_STRING "qos"
-#define OGS_INDEX_STRING "index"
-#define OGS_ARP_STRING "arp"
-#define OGS_PRIORITY_LEVEL_STRING "priority_level"
-#define OGS_PRE_EMPTION_CAPABILITY_STRING "pre_emption_capability"
-#define OGS_PRE_EMPTION_VULNERABILITY_STRING "pre_emption_vulnerability"
-
-#define OGS_PCC_RULE_STRING "pcc_rule"
-#define OGS_MBR_STRING "mbr"
-#define OGS_GBR_STRING "gbr"
-#define OGS_FLOW_STRING "flow"
-#define OGS_DIRECTION_STRING "direction"
-#define OGS_DESCRIPTION_STRING "description"
-
-#define OGS_SMF_STRING "smf"
-#define OGS_IPV4_STRING "ipv4"
-#define OGS_IPV6_STRING "ipv6"
-#define OGS_UE_STRING "ue"
-#define OGS_IPV4_FRAMED_ROUTES_STRING "ipv4_framed_routes"
-#define OGS_IPV6_FRAMED_ROUTES_STRING "ipv6_framed_routes"
-
-/************************************
- * PLMN_ID Structure                */
-typedef struct ogs_plmn_id_s {
-ED2(uint8_t mcc2:4;,
-    uint8_t mcc1:4;)
-ED2(uint8_t mnc1:4;,
-    uint8_t mcc3:4;)
-ED2(uint8_t mnc3:4;,
-    uint8_t mnc2:4;)
-} __attribute__ ((packed)) ogs_plmn_id_t;
-
-uint32_t ogs_plmn_id_hexdump(const void *plmn_id);
-
-uint16_t ogs_plmn_id_mcc(const ogs_plmn_id_t *plmn_id);
-uint16_t ogs_plmn_id_mnc(const ogs_plmn_id_t *plmn_id);
-uint16_t ogs_plmn_id_mnc_len(const ogs_plmn_id_t *plmn_id);
-
-void *ogs_plmn_id_build(ogs_plmn_id_t *plmn_id,
-        uint16_t mcc, uint16_t mnc, uint16_t mnc_len);
-
-char *ogs_plmn_id_mcc_string(const ogs_plmn_id_t *plmn_id);
-char *ogs_plmn_id_mnc_string(const ogs_plmn_id_t *plmn_id);
-
-#define OGS_PLMNIDSTRLEN    (sizeof(ogs_plmn_id_t)*2+1)
-char *ogs_plmn_id_to_string(const ogs_plmn_id_t *plmn_id, char *buf);
-
-char *ogs_serving_network_name_from_plmn_id(const ogs_plmn_id_t *plmn_id);
-char *ogs_home_network_domain_from_plmn_id(const ogs_plmn_id_t *plmn_id);
-char *ogs_epc_domain_from_plmn_id(const ogs_plmn_id_t *plmn_id);
-char *ogs_nrf_fqdn_from_plmn_id(const ogs_plmn_id_t *plmn_id);
-char *ogs_nssf_fqdn_from_plmn_id(const ogs_plmn_id_t *plmn_id);
-char *ogs_dnn_oi_from_plmn_id(const ogs_plmn_id_t *plmn_id);
-char *ogs_dnn_oi_from_fqdn(char *fqdn);
-uint16_t ogs_plmn_id_mnc_from_fqdn(char *fqdn);
-uint16_t ogs_plmn_id_mcc_from_fqdn(char *fqdn);
-
-/*************************
- * NAS PLMN_ID Structure */
-typedef struct ogs_nas_plmn_id_s {
-ED2(uint8_t mcc2:4;,
-    uint8_t mcc1:4;)
-ED2(uint8_t mnc3:4;,
-    uint8_t mcc3:4;)
-ED2(uint8_t mnc2:4;,
-    uint8_t mnc1:4;)
-} __attribute__ ((packed)) ogs_nas_plmn_id_t;
-
-void *ogs_nas_from_plmn_id(
-        ogs_nas_plmn_id_t *ogs_nas_plmn_id, const ogs_plmn_id_t *plmn_id);
-void *ogs_nas_to_plmn_id(
-        ogs_plmn_id_t *plmn_id, const ogs_nas_plmn_id_t *ogs_nas_plmn_id);
-
-/************************************
- * AMF_ID Structure                 */
-typedef struct ogs_amf_id_s {
-    uint8_t region;
-    uint8_t set1;
-ED2(uint8_t set2:2;,
-    uint8_t pointer:6;)
-} __attribute__ ((packed)) ogs_amf_id_t;
-
-typedef struct ogs_guami_s {
-    ogs_plmn_id_t plmn_id;
-    ogs_amf_id_t amf_id;
-} ogs_guami_t;
-
-uint32_t ogs_amf_id_hexdump(const ogs_amf_id_t *amf_id);
-
-ogs_amf_id_t *ogs_amf_id_from_string(ogs_amf_id_t *amf_id, const char *hex);
-char *ogs_amf_id_to_string(const ogs_amf_id_t *amf_id);
-
-uint8_t ogs_amf_region_id(const ogs_amf_id_t *amf_id);
-uint16_t ogs_amf_set_id(const ogs_amf_id_t *amf_id);
-uint8_t ogs_amf_pointer(const ogs_amf_id_t *amf_id);
-
-ogs_amf_id_t *ogs_amf_id_build(ogs_amf_id_t *amf_id,
-        uint8_t region, uint16_t set, uint8_t pointer);
-
-/************************************
- * 9.11.3.4 5GS mobile identity
- * - Protection Scheme */
-#define OGS_PROTECTION_SCHEME_NULL 0
-#define OGS_PROTECTION_SCHEME_PROFILE_A 1
-#define OGS_PROTECTION_SCHEME_PROFILE_B 2
-
-/************************************
- * SUPI/GPSI/GUTI                   */
-#define OGS_ID_SUPI_TYPE_IMSI "imsi"
-#define OGS_ID_GPSI_TYPE_MSISDN "msisdn"
-#define OGS_ID_SUPI_TYPE_IMEISV "imeisv"
-#define OGS_ID_5G_GUTI_TYPE "5g-guti"
-char *ogs_id_get_type(const char *str);
-char *ogs_id_get_value(const char *str);
-
-/************************************
- * TAI Structure                    */
-typedef struct ogs_eps_tai_s {
-    ogs_plmn_id_t plmn_id;
-    uint16_t tac;
-} __attribute__ ((packed)) ogs_eps_tai_t;
-
-typedef struct ogs_5gs_tai_s {
-    ogs_plmn_id_t plmn_id;
-    ogs_uint24_t tac;
-} __attribute__ ((packed)) ogs_5gs_tai_t;
-
-typedef struct ogs_e_cgi_s {
-    ogs_plmn_id_t plmn_id;
-    uint32_t cell_id; /* 28 bit */
-} __attribute__ ((packed)) ogs_e_cgi_t;
-
-typedef struct ogs_nr_cgi_s {
-    ogs_plmn_id_t plmn_id;
-    uint64_t cell_id; /* 36 bit */
-} __attribute__ ((packed)) ogs_nr_cgi_t;
-
-/************************************
- * S-NSSAI Structure                */
-#define OGS_S_NSSAI_NO_SD_VALUE     0xffffff
-typedef struct ogs_s_nssai_s {
-    uint8_t sst;
-    ogs_uint24_t sd;
-} __attribute__ ((packed)) ogs_s_nssai_t;
-
-char *ogs_s_nssai_sd_to_string(const ogs_uint24_t sd);
-ogs_uint24_t ogs_s_nssai_sd_from_string(const char *hex);
-
-/**************************************************
- * Common Structure
- * S1AP : 9.2.2.1 Transport Layer Address, See 36.414
- * GTP : 8.22 Fully Qualified TEID (F-TEID) */
-#define OGS_IPV4_LEN                        4
-#define OGS_IPV6_LEN                        16
-#define OGS_IPV6_DEFAULT_PREFIX_LEN         64
-#define OGS_IPV6_128_PREFIX_LEN             128
-#define OGS_IPV4V6_LEN                      20
-typedef struct ogs_ip_s {
-    uint32_t addr;
-    uint8_t addr6[OGS_IPV6_LEN];
-    uint32_t len;
-ED3(uint8_t ipv4:1;,
-    uint8_t ipv6:1;,
-    uint8_t reserved:6;)
-} ogs_ip_t;
-
-int ogs_ip_to_sockaddr(ogs_ip_t *ip, uint16_t port, ogs_sockaddr_t **list);
-int ogs_sockaddr_to_ip(
-        ogs_sockaddr_t *addr, ogs_sockaddr_t *addr6, ogs_ip_t *ip);
-
-char *ogs_ipv4_to_string(uint32_t addr);
-char *ogs_ipv6addr_to_string(const uint8_t *addr6);
-char *ogs_ipv6prefix_to_string(const uint8_t *addr6, uint8_t prefixlen);
-int ogs_ipv4_from_string(uint32_t *addr, const char *string);
-int ogs_ipv6addr_from_string(uint8_t *addr6, const char *string);
-int ogs_ipv6prefix_from_string(
-        uint8_t *addr6, uint8_t *prefixlen, const char *string);
-
-/**************************************************
- * GTPv1-C: TS 29.060 7.7.27 End User Address (EUA) */
-#define OGS_PDP_EUA_ORG_ETSI 0
-#define OGS_PDP_EUA_ORG_IETF 1
-#define OGS_PDP_EUA_ETSI_PPP 1
-#define OGS_PDP_EUA_IETF_IPV4 0x21
-#define OGS_PDP_EUA_IETF_IPV6 0x57
-#define OGS_PDP_EUA_IETF_IPV4V6 0x8D
-typedef struct ogs_eua_s {
-ED2(uint8_t spare:4;,
-    uint8_t organization:4;)
-    uint8_t type;
+typedef struct ogs_pfcp_up_function_features_s {
     union {
-        /* PDU_SESSION_TYPE_IPV4 */
-        uint32_t addr;
-
-        /* PDU_SESSION_TYPE_IPV6 */
-        uint8_t addr6[OGS_IPV6_LEN];
-
-        /* PDU_SESSION_TYPE_IPV4V6 */
         struct {
-            uint32_t addr;
-            uint8_t addr6[OGS_IPV6_LEN];
-        } __attribute__ ((packed)) both;
-    };
-} __attribute__ ((packed)) ogs_eua_t;
-
-/**************************************************
- * GTPv2-C: TS 29.274 8.14 PDN Address Allocation (PAA) */
-#define OGS_PAA_IPV4_LEN                                5
-#define OGS_PAA_IPV6_LEN                                18
-#define OGS_PAA_IPV4V6_LEN                              22
-typedef struct ogs_paa_s {
-ED2(uint8_t spare:5;,
-/* 8.34 PDN Type  */
-    uint8_t session_type:3;)
-    union {
-        /* PDU_SESSION_TYPE_IPV4 */
-        uint32_t addr;
-
-        /* PDU_SESSION_TYPE_IPV6 */
-        struct {
-            /* the IPv6 Prefix Length */
-            uint8_t len;
-            /* IPv6 Prefix and Interface Identifier */
-            uint8_t addr6[OGS_IPV6_LEN];
+/*
+ * 5/8 TREU Sxb, Sxc, N4
+ *   Traffic Redirection Enforcement in the UP function is supported
+ *   by the UP function.
+ * 5/7 HEEU Sxb, Sxc, N4
+ *   Header Enrichment of Uplink traffic is supported by the UP function.
+ * 5/6 PFDM Sxb, Sxc, N4
+ *   The PFD Management procedure is supported by the UP function.
+ * 5/5 FTUP Sxa, Sxb, N4
+ *   F-TEID allocation / release in the UP function is supported
+ *   by the UP function.
+ * 5/4 TRST Sxb, Sxc, N4
+ *   Traffic Steering is supported by the UP function.
+ * 5/3 DLBD Sxa, N4
+ *   The buffering parameter 'DL Buffering Duration' is supported
+ *   by the UP function.
+ * 5/2 DDND Sxa, N4
+ *   The buffering parameter 'Downlink Data Notification Delay' is supported
+ *   by the UP function.
+ * 5/1 BUCP Sxa, N4
+ *   Downlink Data Buffering in CP function is supported by the UP function.
+ */
+ED8(uint8_t treu:1;,
+    uint8_t heeu:1;,
+    uint8_t pfdm:1;,
+    uint8_t ftup:1;,
+    uint8_t trst:1;,
+    uint8_t dldb:1;,
+    uint8_t ddnd:1;,
+    uint8_t bucp:1;)
         };
-
-        /* PDU_SESSION_TYPE_IPV4V6 */
-        struct {
-            struct {
-                /* the IPv6 Prefix Length */
-                uint8_t len;
-                /* IPv6 Prefix and Interface Identifier */
-                uint8_t addr6[OGS_IPV6_LEN];
-            };
-            uint32_t addr;
-        } __attribute__ ((packed)) both;
+        uint8_t octet5;
     };
-} __attribute__ ((packed)) ogs_paa_t;
+    union {
+        struct {
+/*
+ * 6/8 EPFAR Sxa, Sxb, Sxc, N4
+ *   The UP function supports the Enhanced PFCP Association Release feature
+ *   (see clause 5.18).
+ * 6/7 PFDE Sxb, N4
+ *   The UP function supports a PFD Contents including a property
+ *   with multiple values.
+ * 6/6 FRRT Sxb, N4
+ *   The UP function supports Framed Routing
+ *   (see IETF RFC 2865 [37] and IETF RFC 3162 [38]).
+ * 6/5 TRACE Sxa, Sxb, Sxc, N4
+ *   The UP function supports Trace (see clause 5.15).
+ * 6/4 QUOAC Sxb, Sxc, N4
+ *   The UP function supports being provisioned with the Quota Action
+ *   to apply when reaching quotas.
+ * 6/3 UDBC Sxb, Sxc, N4
+ *   Support of UL/DL Buffering Control
+ * 6/2 PDIU Sxa, Sxb, Sxc, N4
+ *   Support of PDI optimised signalling in UP function (see clause 5.2.1A.2).
+ * 6/1 EMPU Sxa, Sxb, N4
+ *   Sending of End Marker packets supported by the UP function.
+ */
+ED8(uint8_t epfar:1;,
+    uint8_t pfde:1;,
+    uint8_t frrt:1;,
+    uint8_t trace:1;,
+    uint8_t quoac:1;,
+    uint8_t udbc:1;,
+    uint8_t pdiu:1;,
+    uint8_t empu:1;)
+        };
+        uint8_t octet6;
+    };
+    union {
+        struct {
+/*
+ * 7/8 GCOM N4
+ *   UPF support of 5G VN Group Communication.(See clause 5.23)
+ * 7/7 BUNDL Sxa, Sxb, Sxc, N4
+ *   PFCP messages bunding (see clause 6.5) is supported by the UP function.
+ * 7/6 MTE N4
+ *   UPF supports multiple instances of Traffic Endpoint IDs in a PDI.
+ * 7/5 MNOP Sxa, Sxb, Sxc, N4
+ *   The UP function supports measurement of number of packets
+ *   which is instructed with the flag 'Measurement of Number of Packets'
+ *   in a URR.See also clause 5.2.2.2.1.
+ * 7/4 SSET N4
+ *   UPF support of PFCP sessions successively controlled
+ *   by different SMFs of a same SMF Set (see clause 5.22).
+ * 7/3 UEIP Sxb, N4
+ *   The UP function supports allocating UE IP addresses or prefixes
+ *   (see clause 5.21).
+ * 7/2 ADPDP Sxa, Sxb, Sxc, N4
+ *   The UP function supports the Activation and Deactivation
+ *   of Pre-defined PDRs (see clause 5.19).
+ * 7/1 DPDRA Sxb, Sxc, N4
+ *   The UP function supports Deferred PDR Activation or Deactivation.
+ */
+ED8(uint8_t gcom:1;,
+    uint8_t bundl:1;,
+    uint8_t mte:1;,
+    uint8_t mnop:1;,
+    uint8_t sset:1;,
+    uint8_t ueip:1;,
+    uint8_t adpdp:1;,
+    uint8_t dpdra:1;)
+        };
+        uint8_t octet7;
+    };
+    union {
+        struct {
+/*
+ * 8/8 MPTCP N4
+ *   UPF support of MPTCP Proxy functionality (see clause 5.20)
+ * 8/7 TSCU N4
+ *   Time Sensitive Communication is supported by the UPF (see clause 5.26).
+ * 8/6 IP6PL N4
+ *   UPF supports:
+ *     - UE IPv6 address(es) allocation with IPv6 prefix length other than
+ *       default /64 (including allocating /128 individual IPv6 addresses),
+ *       as specified in clause 4.6.2.2 of of 3GPP TS 23.316 [57]; and
+ *     - multiple UE IPv6 addresses allocation using multiple instances
+ *       of the UE IP Address IE in a same PDI or Traffic Endpoint,
+ *       or using multiple PDIs or Traffic Endpoints
+ *       with a different UE IP Address as specified in clause 5.21.1.
+ * 8/5 IPTV N4
+ *   UPF support of IPTV service (see clause 5.25)
+ * 8/4 NORP Sxa, Sxb, Sxc, N4
+ *   UP function support of Number of Reports as specified in clause 5.2.2.2.
+ * 8/3 VTIME Sxb,N4
+ *   UP function support of quota validity time feature.
+ * 8/2 RTTL N4
+ *   UPF supports redundant transmission at transport layer.
+ * 8/1 MPAS N4
+ *   UPF support for multiple PFCP associations to the SMFs in an SMF set
+ *   (see clause 5.22.3).
+ */
+ED8(uint8_t mptcp:1;,
+    uint8_t tscu:1;,
+    uint8_t ip6pl:1;,
+    uint8_t iptv:1;,
+    uint8_t norp:1;,
+    uint8_t vtime:1;,
+    uint8_t rttl:1;,
+    uint8_t mpas:1;)
+        };
+        uint8_t octet8;
+    };
+    union {
+        struct {
+/*
+ * 9/8 RDS Sxb, N4
+ *   UP function support of Reliable Data Service (see clause 5.29).
+ * 9/7 DDDS N4
+ *   UPF support of reporting the first buffered / discarded downlink data
+ *   for downlink data delivery status notification.
+ * 9/6 ETHAR N4
+ *   UPF support of Ethernet PDU Session Anchor Relocation (see clause 5.13.6).
+ * 9/5 CIOT Sxb, N4
+ *   UP function support of CIoT feature,
+ *   e.g.small data packet rate enforcement.(see 5.4.15)
+ * 9/4 MT-EDT Sxa
+ *   SGW-U support of reporting the size of DL Data Packets.
+ *   (see clause 5.2.4.1).
+ * 9/3 GPQM N4
+ *   UPF support of per GTP-U Path QoS monitoring (see clause 5.24.5).
+ * 9/2 QFQM N4
+ *   UPF support of per QoS flow per UE QoS monitoring (see clause 5.24.4).
+ * 9/1 ATSSS-LL N4
+ *   UPF support of ATSSS-LLL steering functionality (see clause 5.20)
+ */
+ED8(uint8_t rds:1;,
+    uint8_t ddds:1;,
+    uint8_t ethar:1;,
+    uint8_t ciot:1;,
+    uint8_t mt_edt:1;,
+    uint8_t gpqm:1;,
+    uint8_t qfqm:1;,
+    uint8_t atsss_ll:1;)
+        };
+        uint8_t octet9;
+    };
+    union {
+        struct {
+/*
+ * 10/8 DNSTS N4
+ *   UP function support DNS Traffic Steering based on
+ *   FQDN in the DNS Query message (see
+ *   clause 5.33.4)
+ * 10/7 IPREP N4
+ *   UP function supports IP Address and Port number
+ *   replacement (see clause 5.33.3).
+ * 10/6 RESPS Sxb, N4
+ *   UP function supports Restoration of PFCP Sessions
+ *   associated with one or more PGW-C/SMF FQ-
+ *   CSID(s), Group Id(s) or CP IP address(es) (see
+ *   clause 5.22.4)
+ * 10/5 UPBER N4
+ *   UP function supports the uplink packets buffering
+ *   during EAS relocation.
+ * 10/4 L2TP Sxb, N4
+ *   UP function supports the L2TP feature as described
+ *   in clause 5.31.
+ * 10/3 NSPOC Sxa, Sxb, N4
+ *   UP function supports notifying start of Pause of
+ *   Charging via user plane.
+ * 10/2 QUASF Sxb, Sxc, N4
+ *   The UP function supports being provisioned in a
+ *   URR with an Exempted Application ID for Quota
+ *   Action or an Exempted SDF Filter for Quota Action
+ *   which is to be used when the quota is exhausted.
+ *   See also clauses 5.2.2.2.1 and 5.2.2.3.1.
+ * 10/1 RTTWP N4
+ *   UPF support of RTT measurements towards the UE Without PMF.
+ */
+ED8(uint8_t dnsts:1;,
+    uint8_t iprep:1;,
+    uint8_t resps:1;,
+    uint8_t upber:1;,
+    uint8_t l2tp:1;,
+    uint8_t nspoc:1;,
+    uint8_t quasf:1;,
+    uint8_t rttwp:1;)
+        };
+        uint8_t octet10;
+    };
+    union {
+        struct {
 
 /*
- *  Bitrate Upper Bound According to 3GPP Standards
- *
- *  EPC (S1AP): 3GPP TS 36.413 §9.2.1.19 Bit Rate
- *      - Maximum allowed bitrate value specified for EPC
- *
- *  5GC (NGAP): 3GPP TS 38.414 §9.3.1.4 Bit Rate
- *      - Defines larger bitrate ceiling due to 5GC performance model
- *
- *  NOTE: These values represent the upper boundary (ceiling) of the encode
- *        bitrate field in each control-plane protocol.
+ * 11/6 UPIDP N4
+ *   UP function supports User Plane Inactivity Detection
+ *   and reporting per PDR feature as specified in
+ *   clause 5.11.3.
+ * 11/5 RATP Sxb, N4
+ *   UP function supports Redirection Address Types set
+ *   to "Port", "IPv4 address and Port", "IPv6 address
+ *   and Port", or "IPv4 and IPv6 addresses and Port".
+ * 11/4 EPPPI N4
+ *   UP function supports Enhanced Provisioning of
+ *   Paging Policy Indicator feature as specified in
+ *   clause 5.36.2.
+ * 11/3 PSUPRM N4, N4mb
+ *   UP function supports Per Slice UP Resource
+ *   Management (see clause 5.35).3GPP TS 29.244 version 17.7.1 Release 17
+ * 11/2 MBSN4 N4
+ *   UPF supports sending MBS multicast session data
+ *   to associated PDU sessions using 5GC individual
+ *   delivery.
+ * 11/1 DRQOS N4
+ *   UP function supports Direct Reporting of QoS
+ *   monitoring events to Local NEF or AF (see
+ *   clause 5.33.5).
  */
-#define OGS_MAX_BITRATE_S1AP    10000000000UL        /* S1AP / EPC */
-#define OGS_MAX_BITRATE_NGAP    4000000000000UL      /* NGAP / 5GC */
-
-
-typedef struct ogs_bitrate_s {
-    uint64_t downlink;        /* bits per seconds */
-    uint64_t uplink;          /* bits per seconds */
-} ogs_bitrate_t;
-
-int ogs_check_br_conf(ogs_bitrate_t *br);
-
-/**********************************
- * QoS Structure                 */
-typedef struct ogs_qos_s {
-#define OGS_QOS_INDEX_1                                       1
-#define OGS_QOS_INDEX_2                                       2
-#define OGS_QOS_INDEX_5                                       5
-    uint8_t         index;
-
-    struct {
-    /* Values 1 to 8 should only be assigned for services that are
-     * authorized to receive prioritized treatment within an operator domain.
-     * Values 9 to 15 may be assigned to resources that are authorized
-     * by the home network and thus applicable when a UE is roaming. */
-        uint8_t     priority_level;
-/*
- * Ch 7.3.40 Allocation-Retenion-Proirty in TS 29.272 V15.9.0
- *
- * If the Pre-emption-Capability AVP is not present in the
- * Allocation-Retention-Priority AVP, the default value shall be
- * PRE-EMPTION_CAPABILITY_DISABLED (1).
- *
- * If the Pre-emption-Vulnerability AVP is not present in the
- * Allocation-Retention-Priority AVP, the default value shall be
- * PRE-EMPTION_VULNERABILITY_ENABLED (0).
- *
- * However, to easily set up VoLTE service,
- * enable Pre-emption Capability/Vulnerablility
- * in Default Bearer
- */
-#define OGS_EPC_PRE_EMPTION_DISABLED                        1
-#define OGS_EPC_PRE_EMPTION_ENABLED                         0
-
-#define OGS_5GC_PRE_EMPTION_DISABLED                        1
-#define OGS_5GC_PRE_EMPTION_ENABLED                         2
-        uint8_t     pre_emption_capability;
-        uint8_t     pre_emption_vulnerability;
-    } arp;
-
-    ogs_bitrate_t   mbr;  /* Maxmimum Bit Rate (MBR) */
-    ogs_bitrate_t   gbr;  /* Guaranteed Bit Rate (GBR) */
-} ogs_qos_t;
-
-int ogs_check_qos_conf(ogs_qos_t *qos);
-
-/**********************************
- * TS29.212
- * Ch 5.3.65 Flow-Direction AVP
- *
- * The Flow-Direction AVP (AVP code 1080) is of type Enumerated.
- * It indicates the direction/directions that a filter is applicable,
- * downlink only, uplink only or both down- and uplink (bidirectional).
- *
- *  UNSPECIFIED (0)
- *    The corresponding filter applies for traffic to the UE (downlink),
- *    but has no specific direction declared. The service data flow detection
- *    shall apply the filter for uplink traffic as if the filter was
- *    bidirectional. The PCRF shall not use the value UNSPECIFIED
- *    in filters created by the network in NW-initiated procedures.
- *    The PCRF shall only include the value UNSPECIFIED in filters
- *    in UE-initiated procedures if the same value is received from
- *    in the CCR request from the PCEF.
- *
- *  DOWNLINK (1)
- *    The corresponding filter applies for traffic to the UE.
- *
- *  UPLINK (2)
- *    The corresponding filter applies for traffic from the UE.
- *
- *  BIDIRECTIONAL (3)
- *    The corresponding filter applies for traffic both to and from the UE.
- *
- *  NOTE: The corresponding filter data is unidirectional. The filter
- *        for the opposite direction has the same parameters, but having
- *        the source and destination address/port parameters swapped.
- */
-#define OGS_FLOW_UNSPECIFIED      0
-#define OGS_FLOW_DOWNLINK_ONLY    1
-#define OGS_FLOW_UPLINK_ONLY      2
-#define OGS_FLOW_BIDIRECTIONAL    3
-typedef struct ogs_flow_s {
-    uint8_t direction;
-    char *description;
-} ogs_flow_t;
-
-#define OGS_FLOW_FREE(__fLOW) \
-    do { \
-        if ((__fLOW)->description) { \
-            ogs_free((__fLOW)->description); \
-        } \
-        else \
-            ogs_assert_if_reached(); \
-    } while(0)
-
-/**********************************
- * TS29.212
- * Ch 5.3.2 Charging-Rule-Install AVP
- *
- * PCC Rule Structure
- */
-typedef struct ogs_pcc_rule_s {
-#define OGS_PCC_RULE_TYPE_INSTALL               1
-#define OGS_PCC_RULE_TYPE_REMOVE                2
-    uint8_t type;
-
-    char *id;   /* 5GC */
-    char *name; /* EPC */
-
-    ogs_flow_t flow[OGS_MAX_NUM_OF_FLOW_IN_PCC_RULE];
-    int num_of_flow;
-
-    int flow_status;
-    uint32_t precedence;
-    uint32_t rating_group;
-
-    ogs_qos_t  qos;
-} ogs_pcc_rule_t;
-
-#define OGS_STORE_PCC_RULE(__dST, __sRC) \
-    do { \
-        int __iNDEX; \
-        ogs_assert((__sRC) != NULL); \
-        ogs_assert((__dST) != NULL); \
-        OGS_PCC_RULE_FREE(__dST); \
-        (__dST)->type = (__sRC)->type; \
-        if ((__sRC)->name) { \
-            (__dST)->name = ogs_strdup((__sRC)->name); \
-            ogs_assert((__dST)->name); \
-        } \
-        if ((__sRC)->id) { \
-            (__dST)->id = ogs_strdup((__sRC)->id); \
-            ogs_assert((__dST)->id); \
-        } \
-        for (__iNDEX = 0; __iNDEX < (__sRC)->num_of_flow; __iNDEX++) { \
-            (__dST)->flow[__iNDEX].direction = \
-                (__sRC)->flow[__iNDEX].direction; \
-            (__dST)->flow[__iNDEX].description = \
-                ogs_strdup((__sRC)->flow[__iNDEX].description);  \
-            ogs_assert((__dST)->flow[__iNDEX].description); \
-        } \
-        (__dST)->num_of_flow = (__sRC)->num_of_flow; \
-        (__dST)->flow_status = (__sRC)->flow_status; \
-        (__dST)->precedence = (__sRC)->precedence; \
-        memcpy(&(__dST)->qos, &(__sRC)->qos, sizeof(ogs_qos_t)); \
-    } while(0)
-
-#define OGS_PCC_RULE_FREE(__pCCrULE) \
-    do { \
-        int __pCCrULE_iNDEX; \
-        ogs_assert((__pCCrULE) != NULL); \
-        if ((__pCCrULE)->id) \
-            ogs_free((__pCCrULE)->id); \
-        if ((__pCCrULE)->name) \
-            ogs_free((__pCCrULE)->name); \
-        for (__pCCrULE_iNDEX = 0; \
-            __pCCrULE_iNDEX < (__pCCrULE)->num_of_flow; __pCCrULE_iNDEX++) { \
-            OGS_FLOW_FREE(&((__pCCrULE)->flow[__pCCrULE_iNDEX])); \
-        } \
-        memset((__pCCrULE), 0, sizeof(ogs_pcc_rule_t)); \
-    } while(0)
-
-/**********************************
- * PDN Structure                 */
-typedef struct ogs_session_s {
-    char *name;
-
-    uint32_t context_identifier; /* EPC */
-    bool default_dnn_indicator; /* 5GC */
-
-    uint8_t charging_characteristics[OGS_CHRGCHARS_LEN];
-    bool charging_characteristics_presence;
-
-#define OGS_PDU_SESSION_TYPE_IPV4                   1
-#define OGS_PDU_SESSION_TYPE_IPV6                   2
-#define OGS_PDU_SESSION_TYPE_IPV4V6                 3
-#define OGS_PDU_SESSION_TYPE_UNSTRUCTURED           4
-#define OGS_PDU_SESSION_TYPE_ETHERNET               5
-
-#define OGS_PDU_SESSION_TYPE_TO_DIAMETER(x)         ((x)-1)
-#define OGS_PDU_SESSION_TYPE_FROM_DIAMETER(x)       ((x)+1)
-    uint8_t session_type;
-
-    bool lbo_roaming_allowed; /* true: Allowed, false: Not allowed */
-
-#define OGS_SSC_MODE_1                              1
-#define OGS_SSC_MODE_2                              2
-#define OGS_SSC_MODE_3                              3
-    uint8_t ssc_mode;
-
-    ogs_qos_t qos;
-    ogs_bitrate_t ambr; /* APN-AMBR */
-
-    ogs_ip_t ue_ip;
-    char **ipv4_framed_routes;
-    char **ipv6_framed_routes;
-    ogs_ip_t smf_ip;
-} ogs_session_t;
-
-int ogs_fqdn_build(char *dst, const char *src, int len);
-int ogs_fqdn_parse(char *dst, const char *src, int len);
-
-/**************************************************
- * Protocol Configuration Options Structure
- * 8.13 Protocol Configuration Options (PCO)
- * 10.5.6.3 Protocol configuration options in 3GPP TS 24.008
- * RFC 3232 [103]
- * RFC 1661 [102] */
-#define OGS_PCO_PPP_FOR_USE_WITH_IP_PDP_TYPE_OR_IP_PDN_TYPE 0
-
-#define OGS_PCO_ID_INTERNET_PROTOCOL_CONTROL_PROTOCOL           0x8021
-#define OGS_PCO_ID_PASSWORD_AUTHENTICATION_PROTOCOL             0xc023
-#define OGS_PCO_ID_CHALLENGE_HANDSHAKE_AUTHENTICATION_PROTOCOL  0xc223
-#define OGS_PCO_ID_P_CSCF_IPV6_ADDRESS_REQUEST                  0x0001
-#define OGS_PCO_ID_DNS_SERVER_IPV6_ADDRESS_REQUEST              0x0003
-#define OGS_PCO_ID_MS_SUPPORTS_BCM                              0x0005
-#define OGS_PCO_ID_IP_ADDRESS_ALLOCATION_VIA_NAS_SIGNALLING     0x000a
-#define OGS_PCO_ID_P_CSCF_IPV4_ADDRESS_REQUEST                  0x000c
-#define OGS_PCO_ID_DNS_SERVER_IPV4_ADDRESS_REQUEST              0x000d
-#define OGS_PCO_ID_IPV4_LINK_MTU_REQUEST                        0x0010
-#define OGS_PCO_ID_MS_SUPPORT_LOCAL_ADDR_TFT_INDICATOR          0x0011
-#define OGS_PCO_ID_P_CSCF_RE_SELECTION_SUPPORT                  0x0012
-
-enum ogs_pco_ipcp_options {
-    OGS_IPCP_OPT_IPADDR = 3,
-    OGS_IPCP_OPT_PRIMARY_DNS = 129,
-    OGS_IPCP_OPT_SECONDARY_DNS = 131,
-};
-
-typedef struct ogs_pco_ipcp_options_s {
-    uint8_t type;
-    uint8_t len;
-    uint32_t addr;
-} __attribute__ ((packed)) ogs_pco_ipcp_options_t;
-
-#define OGS_PCO_MAX_NUM_OF_IPCP_OPTIONS 4
-typedef struct ogs_pco_ipcp_s {
-    uint8_t code;
-    uint8_t identifier;
-    uint16_t len;
-    ogs_pco_ipcp_options_t options[OGS_PCO_MAX_NUM_OF_IPCP_OPTIONS];
-} __attribute__ ((packed)) ogs_pco_ipcp_t;
-
-typedef struct ogs_pco_pap_s {
-    uint8_t code;
-    uint8_t identifier;
-    uint16_t len;
-    uint8_t welcome_len;
-    char welcome[255];
-} __attribute__ ((packed)) ogs_pco_pap_t;
-
-typedef struct ogs_pco_chap_s {
-    uint8_t code;
-    uint8_t identifier;
-    uint16_t len;
-} __attribute__ ((packed)) ogs_pco_chap_t;
-
-typedef struct ogs_pco_id_s {
-    uint16_t id;
-    uint8_t len;
-    void *data;
-} ogs_pco_id_t;
-
-#define OGS_MAX_NUM_OF_PROTOCOL_OR_CONTAINER_ID    32
-typedef struct ogs_pco_s {
-ED3(uint8_t ext:1;,
-    uint8_t spare:4;,
-    uint8_t configuration_protocol:3;)
-    uint8_t num_of_id;
-    ogs_pco_id_t ids[OGS_MAX_NUM_OF_PROTOCOL_OR_CONTAINER_ID];
-} ogs_pco_t;
-
-int ogs_pco_parse(ogs_pco_t *pco, unsigned char *data, int data_len);
-int ogs_pco_build(unsigned char *data, int data_len, ogs_pco_t *pco);
+ED7(uint8_t spare:2;,
+    uint8_t upidp:1;,
+    uint8_t ratp:1;,
+    uint8_t epppi:1;,
+    uint8_t psuprm:1;,
+    uint8_t mbsn4:1;,
+    uint8_t drqos:1;)
+        };
+        uint8_t octet11;
+    };
+} __attribute__ ((packed)) ogs_pfcp_up_function_features_t;
 
 /*
- * PFCP Specification
+ * 8.2.26 Apply Action
  *
- * TS29.244, Ch 8.2.82 User Plane IP Resource Information
+ * The octet 5 shall be encoded as follows:
+ *
+ * Bit 1 – DROP (Drop): when set to 1, this indicates a request
+ * to drop the packets.
+ * Bit 2 – FORW (Forward): when set to 1, this indicates a request
+ * to forward the packets.
+ * Bit 3 – BUFF (Buffer): when set to 1, this indicates a request
+ * to buffer the packets.
+ * Bit 4 – NOCP (Notify the CP function): when set to 1,
+ * this indicates a request to notify the CP function about the
+ * arrival of a first downlink packet being buffered.
+ * Bit 5 – DUPL (Duplicate): when set to 1, this indicates a request
+ * to duplicate the packets.
+ * Bit 6 – IPMA (IP Multicast Accept): when set to "1", this indicates
+ * a request to accept UE requests to join an IP multicast group.
+ * Bit 7 – IPMD (IP Multicast Deny): when set to "1", this indicates
+ * a request to deny UE requests to join an IP multicast group.
+ * Bit 8 – DFRT (Duplicate for Redundant Transmission): when set to "1",
+ * this indicates a request to duplicate the packets
+ * for redundant transmission (see clause 5.24.2).
+ *
+ * The octet 6 shall be encoded as follows:
+ *
+ * Bit 1 – EDRT (Eliminate Duplicate Packets for Redundant Transmission):
+ * when set to "1", this indicates a request to eliminate duplicate packets
+ * used for redundant transmission (see clause 5.24.2).
+ * Bit 2 – BDPN (Buffered Downlink Packet Notification): when set to "1",
+ * this indicates a request to notify the CP function about the first buffered
+ * DL packet for downlink data delivery status notification.
+ * Bit 3 – DDPN (Discarded Downlink Packet Notification): when set to "1",
+ * this indicates a request to notify the CP function about the first discarded
+ * DL packet for downlink data delivery status notification if the DL Buffering
+ * Duration or DL Buffering Suggested Packet Count is exceeded or
+ * it is discarded directly. See clause 5.2.3.1.
+ *
+ * Bit 4 - FSSM (Forward packets to lower layer SSM): when set to "1",
+ * this indicates a request to the MB-UPF to forward MBS session data
+ * towards a low layer SSM address allocated by the MB-UPF
+ * using multicast transport.
+ * Bit 5 – MBSU (Forward and replicate MBS data using Unicast transport):
+ * when set to "1", this indicates a request to forward and replicate
+ * MBS session data towards multiple remote GTP-U peers using unicast transport.
+ * Bit 6 to 8 – Spare, for future use and seto to "0".
+
+ *
+ * One and only one of the DROP, FORW, BUFF, IPMA and IPMD flags shall be
+ * set to "1".
+ *
+ * The NOCP flag and BDPN flag may only be set if the BUFF flag is set.
+ * The DUPL flag may be set with any of the DROP, FORW, BUFF and NOCP flags.
+ * The DFRN flag may only be set if the FORW flag is set.
+ * The EDRT flag may be set if the FORW flag is set.
+ * The DDPN flag may be set with any of the DROP and BUFF flags.
+ *
+ * Both the MBSU flag and the FSSM flag may be set
+ * (to require the MB-UPF to forward MBS session data
+ * using both multicast and unicast transports).
+ */
+#define OGS_PFCP_APPLY_ACTION_DROP                          (1<<8)
+#define OGS_PFCP_APPLY_ACTION_FORW                          (1<<9)
+#define OGS_PFCP_APPLY_ACTION_BUFF                          (1<<10)
+#define OGS_PFCP_APPLY_ACTION_NOCP                          (1<<11)
+#define OGS_PFCP_APPLY_ACTION_DUPL                          (1<<12)
+#define OGS_PFCP_APPLY_ACTION_IPMA                          (1<<13)
+#define OGS_PFCP_APPLY_ACTION_IPMD                          (1<<14)
+#define OGS_PFCP_APPLY_ACTION_DFRT                          (1<<15)
+#define OGS_PFCP_APPLY_ACTION_EDRT                          (1<<0)
+#define OGS_PFCP_APPLY_ACTION_BDPN                          (1<<1)
+#define OGS_PFCP_APPLY_ACTION_DDPN                          (1<<2)
+#define OGS_PFCP_APPLY_ACTION_FSSM                          (1<<3)
+#define OGS_PFCP_APPLY_ACTION_MBSU                          (1<<4)
+typedef uint16_t  ogs_pfcp_apply_action_t;
+
+/* 8.2.58 CP Function Features */
+typedef struct ogs_pfcp_cp_function_features_s {
+    union {
+        struct {
+/*
+ * 5/8 UIAUR Sxb, N4
+ *   CP function supports the UE IP Address Usage Reporting feature,
+ *   i.e. receiving and handling of UE IP Address Usage Information IE
+ *   (see clause 5.21.3.2).
+ * 5/7 ARDR Sxb, N4
+ *   CP function supports Additional Usage Reports
+ *   in the PFCP Session Deletion Response (see clause 5.2.2.3.1).
+ * 5/6 MPAS N4
+ *   SMF support for multiple PFCP associations from an SMF set to a single UPF
+ *   (see clause 5.22.3).
+ * 5/5 BUNDL Sxa, Sxb, Sxc, N4
+ *   PFCP messages bunding (see clause 6.5) is supported by the CP function.
+ * 5/4 SSET N4
+ *   SMF support of PFCP sessions successively controlled by different SMFs
+ *   of a same SMF Set (see clause 5.22).
+ * 5/3 EPFAR Sxa, Sxb, Sxc, N4
+ *   The CP function supports the Enhanced PFCP Association Release feature
+ *   (see clause 5.18).
+ * 5/2 OVRL Sxa, Sxb, Sxc, N4
+ *   Overload Control is supported by the CP function.
+ * 5/1 LOAD Sxa, Sxb, Sxc, N4
+ *   Load Control is supported by the CP function.
+ */
+ED8(uint8_t uiaur:1;,
+    uint8_t apdr:1;,
+    uint8_t mpas:1;,
+    uint8_t bundl:1;,
+    uint8_t sset:1;,
+    uint8_t epfar:1;,
+    uint8_t ovrl:1;,
+    uint8_t load:1;)
+        };
+        uint8_t octet5;
+    };
+    union {
+        struct {
+
+/*
+ * 6/2 RPGUR Sxa, Sxb, N4, N4mb
+ *   CP function supports the Peer GTP-U Entity Restart
+ *   Reporting as specified in clause 20.3.4a of
+ *   3GPP TS 23.007 [24] and in clause 5.5 of 3GPP TS 23.527 [40].
+ * 6/1 PSUCC Sxb, Sxc, N4, N4mb
+ *   CP function supports PFCP session establishment
+ *   or modification with Partial Success, i.e. with UP
+ *   function reporting rules that cannot be activated.
+ *   See clause 5.2.9.
+ */
+ED3(uint8_t spare:6;,
+    uint8_t rpgur:1;,
+    uint8_t psucc:1;)
+        };
+        uint8_t octet6;
+    };
+} __attribute__ ((packed)) ogs_pfcp_cp_function_features_t;
+
+
+/*
+ * 8.2.64 Outer Header Remaval
+ *
+ * NOTE 1: The SGW-U/I-UPF shall store GTP-U extension header(s) required
+ * to be forwarded for this packet (as required by the comprehension rules
+ * of Figure 5.2.1-2 of 3GPP TS 29.281 [3]) that are not requested
+ * to be deleted by the GTP-U Extension Header Deletion field.
+ * NOTE 2: The SGW-U/I-UPF shall store the GTP-U message type
+ * for a GTP-U signalling message which is required to be forwarded,
+ * e.g. for an End Marker message.
+ * NOTE 3: This value may apply to DL packets received by a PGW-U
+ * for non-IP PDN connections with SGi tunnelling based
+ * on UDP/IP encapsulation (see clause 4.3.17.8.3.3.2 of 3GPP TS 23.401 [14]).
+ * NOTE 4: The CP function shall use this value to instruct UP function
+ * to remove the GTP-U/UDP/IP header regardless it is IPv4 or IPv6.
+ * NOTE 5: This value may apply to DL packets received by a UPF over N6 for
+ * Ethernet PDU sessions over (see clause 5.8.2.11.3 of 3GPP TS 23.501 [28]).
+ * NOTE 6: This value may apply e.g. to DL packets received by a UPF
+ * (PDU Session Anchor) over N6, when explicit N6 traffic routing information
+ * is provided to the SMF (see clause 5.6.7 of 3GPP TS 23.501 [28]).
+ *
+ * The GTP-U Extension Header Deletion field (octet 6) shall be present
+ * if it is required to delete GTP-U extension header(s) from incoming GTP-PDUs.
+ * Octet 6 shall be absent if all GTP-U extension headers required
+ * to be forwarded shall be stored as indicated in NOTE 1 of Table 8.2.64-1.
+ *
+ * The GTP-U Extension Header Deletion field, when present, shall be encoded
+ * as specified in Table 8.2.64-2. It takes the form of a bitmask where each bit
+ * provides instructions on the information to be deleted from the incoming
+ * GTP-PDU packet. Spare bits shall be ignored by the receiver.
+ */
+typedef struct ogs_pfcp_outer_header_removal_s {
+#define OGS_PFCP_OUTER_HEADER_REMOVAL_GTPU_UDP_IPV4         0
+#define OGS_PFCP_OUTER_HEADER_REMOVAL_GTPU_UDP_IPV6         1
+#define OGS_PFCP_OUTER_HEADER_REMOVAL_UDP_IPV4              2
+#define OGS_PFCP_OUTER_HEADER_REMOVAL_UDP_IPV6              3
+#define OGS_PFCP_OUTER_HEADER_REMOVAL_IPV4                  4
+#define OGS_PFCP_OUTER_HEADER_REMOVAL_IPV6                  5
+#define OGS_PFCP_OUTER_HEADER_REMOVAL_GTPU_UDP_IP           6
+#define OGS_PFCP_OUTER_HEADER_REMOVAL_VLAN_STAG             7
+#define OGS_PFCP_OUTER_HEADER_REMOVAL_SLAN_CTAG             8
+    uint8_t description;
+
+#define OGS_PFCP_PDU_SESSION_CONTAINER_TO_BE_DELETED        1
+    uint8_t gtpu_extheader_deletion;
+} ogs_pfcp_outer_header_removal_t;
+
+/******************************************************************************
+ * PFCP Node ID structure
+ ******************************************************************************/
+#define OGS_PFCP_NODE_ID_IPV4   0
+#define OGS_PFCP_NODE_ID_IPV6   1
+#define OGS_PFCP_NODE_ID_FQDN   2
+
+/******************************************************************************
+ * Add this line to define the UNKNOWN type. We use '3' since 0,1,2 are taken.
+ ******************************************************************************/
+#define OGS_PFCP_NODE_ID_UNKNOWN 0xf
+typedef struct ogs_pfcp_node_id_s {
+ED2(uint8_t     spare:4;,
+    uint8_t     type:4;)
+    union {
+        uint32_t addr;
+        uint8_t addr6[OGS_IPV6_LEN];
+        char fqdn[OGS_MAX_FQDN_LEN];
+    };
+} __attribute__ ((packed)) ogs_pfcp_node_id_t;
+
+typedef struct ogs_pfcp_f_seid_s {
+ED3(uint8_t     spare:6;,
+    uint8_t     ipv4:1;,
+    uint8_t     ipv6:1;)
+    uint64_t    seid;
+    union {
+        uint32_t addr;
+        uint8_t addr6[OGS_IPV6_LEN];
+        struct {
+            uint32_t addr;
+            uint8_t addr6[OGS_IPV6_LEN];
+        } both;
+    };
+} __attribute__ ((packed)) ogs_pfcp_f_seid_t;
+
+/*
+ * 8.2.3 F-TEID
+ *
+ * The following flags are coded within Octet 5:
+ *
+ * - Bit 1 – V4: If this bit is set to "1" and the CH bit is not set,
+ *   then the IPv4 address field shall be present,
+ *   otherwise the IPv4 address field shall not be present.
+ * - Bit 2 – V6: If this bit is set to "1" and the CH bit is not set,
+ *   then the IPv6 address field shall be present,
+ *   otherwise the IPv6 address field shall not be present.
+ * - Bit 3 – CH (CHOOSE): If this bit is set to "1", then the TEID,
+ *   IPv4 address and IPv6 address fields shall not be present and
+ *   the UP function shall assign an F-TEID with an IP4 or an IPv6 address
+ *   if the V4 or V6 bit is set respectively. This bit shall only be set
+ *   by the CP function.
+ * - Bit 4 – CHID (CHOOSE ID): If this bit is set to "1",
+ *   then the UP function shall assign the same F-TEID to the PDRs requested
+ *   to be created in a PFCP Session Establishment Request or
+ *   PFCP Session Modification Request with the same CHOOSE ID value.
+ *   This bit may only be set to "1" if the CH bit it set to "1".
+ *   This bit shall only be set by the CP function.
+ * - Bit 5 to 8: Spare, for future use and set to 0.
+ *
+ * At least one of the V4 and V6 flags shall be set to "1", and
+ * both may be set to "1" for both scenarios:
+ *
+ * - when the CP function is allocating F-TEID, i.e. both IPv4 address field
+ *   and IPv6 address field may be present;
+ * - or when the UP function is requested to allocate the F-TEID,
+ *   i.e. when CHOOSE bit is set to "1", and the IPv4 address and
+ *   IPv6 address fields are not present.
+ *
+ * Octet 6 to 9 (TEID) shall be present and shall contain a GTP-U TEID,
+ * if the CH bit in octet 5 is not set. When the TEID is present,
+ * if both IPv4 and IPv6 addresses are present in the F-TEID IE,
+ * then the TEID value shall be shared by both addresses.
+ *
+ * Octets "m to (m+3)" and/or "p to (p+15)"(IPv4 address / IPv6 address fields),
+ * if present, it shall contain the respective IP address values.
+ *
+ * Octet q shall be present and shall contain a binary integer value
+ * if the CHID bit in octet 5 is set to "1".
+ */
+typedef struct ogs_pfcp_f_teid_s {
+ED5(uint8_t     spare1:4;,
+    uint8_t     chid:1;,
+    uint8_t     ch:1;,
+    uint8_t     ipv6:1;,
+    uint8_t     ipv4:1;)
+    union {
+        struct {
+        ED4(uint8_t choose_id;,
+            uint8_t spare2;,
+            uint8_t spare3;,
+            uint8_t spare4;)
+        };
+        struct {
+            uint32_t teid;
+            union {
+                uint32_t addr;
+                uint8_t addr6[OGS_IPV6_LEN];
+                struct {
+                    uint32_t addr;
+                    uint8_t addr6[OGS_IPV6_LEN];
+                } both;
+            };
+        };
+    };
+} __attribute__ ((packed)) ogs_pfcp_f_teid_t;
+
+/*
+ * 8.2.62 UE IP Address
+ *
+ * - Bit 1 – V6: If this bit is set to "1", then the IPv6 address field
+ *   shall be present in the UE IP Address, otherwise the IPv6 address field
+ *   shall not be present.
+ * - Bit 2 – V4: If this bit is set to "1", then the IPv4 address field
+ *   shall be present in the UE IP Address, otherwise the IPv4 address field
+ *   shall not be present.
+ * - Bit 3 – S/D: This bit is only applicable to the UE IP Address IE
+ *   in the PDI IE. It shall be set to "0" and ignored by the receiver
+ *   in IEs other than PDI IE. In the PDI IE, if this bit is set to "0",
+ *   this indicates a Source IP address; if this bit is set to "1",
+ *   this indicates a Destination IP address.
+ * - Bit 4 – IPv6D: This bit is only applicable to the UE IP address IE
+ *   in the PDI IE and whhen V6 bit is set to "1". If this bit is set to "1",
+ *   then the IPv6 Prefix Delegation Bits field shall be present,
+ *   otherwise the UP function shall consider IPv6 prefix is default /64.
+ * - Bit 5 to 8 Spare, for future use and set to 0.
+ *
+ * Octets "m to (m+3)" or "p to (p+15)" (IPv4 address / IPv6 address fields),
+ * if present, shall contain the address value.
+ *
+ * Octet r, if present, shall contain the number of bits is allocated
+ * for IPv6 prefix delegation, e.g. if /60 prefix is used, the value
+ * is set to "4". When using UE IP address IE in a PDI to match the packets,
+ * the UP function shall only use the IPv6 prefix part and
+ * ignore the interface identifier part.
+ */
+typedef struct ogs_pfcp_ue_ip_addr_s {
+ED8(uint8_t     spare:1;,
+    uint8_t     ip6pl:1;,
+    uint8_t     chv6:1;,
+    uint8_t     chv4:1;,
+    uint8_t     ipv6d:1;,
+#define OGS_PFCP_UE_IP_SRC     0
+#define OGS_PFCP_UE_IP_DST     1
+    uint8_t     sd:1;,
+    uint8_t     ipv4:1;,
+    uint8_t     ipv6:1;)
+    union {
+        uint32_t addr;
+        uint8_t addr6[OGS_IPV6_LEN];
+        struct {
+            uint32_t addr;
+            uint8_t addr6[OGS_IPV6_LEN];
+        } both;
+    };
+} __attribute__ ((packed)) ogs_pfcp_ue_ip_addr_t;
+
+/*
+ * 8.2.56 Outer Header Creation
+ *
+ * NOTE 1: The SGW-U/I-UPF shall also create GTP-U extension header(s)
+ * if any has been stored for this packet, during a previous outer header
+ * removal (see clause 8.2.64).
+ * NOTE 2: This value may apply to UL packets sent by a PGW-U
+ * for non-IP PDN connections with SGi tunnelling based on UDP/IP encapsulation
+ * (see clause 4.3.17.8.3.3.2 of 3GPP TS 23.401 [14]).
+ * NOTE 3: The SGW-U/I-UPF shall set the GTP-U message type
+ * to the value stored during the previous outer header removal.
+ * NOTE 4: This value may apply to UL packets sent by a UPF
+ * for Ethernet PDU sessions over N6
+ * (see clause 5.8.2.11.6 of 3GPP TS 23.501 [28]).
+ * NOTE 5: This value may apply e.g. to UL packets sent by a UPF
+ * (PDU Session Anchor) over N6, when explicit N6 traffic routing information is provided to the SMF (see clause 5.6.7 of 3GPP TS 23.501 [28]).
+ *
+ * At least one bit of the Outer Header Creation Description field
+ * shall be set to 1. Bits 5/1 and 5/2 may both be set to 1 if an F-TEID
+ * with both an IPv4 and IPv6 addresses has been assigned by the GTP-U peer.
+ * In this case, the UP function shall send the outgoing packet
+ * towards the IPv4 or IPv6 address.
+ *
+ * The TEID field shall be present if the Outer Header Creation Description
+ * requests the creation of a GTP-U header. Otherwise it shall not be present.
+ * When present, it shall contain the destination GTP-U TEID to set
+ * in the GTP-U header of the outgoing packet.
+ *
+ * The IPv4 Address field shall be present if the Outer Header Creation
+ * Description requests the creation of an IPv4 header. Otherwise it shall
+ * not be present. When present, it shall contain the destination IPv4 address
+ * to set in the IPv4 header of the outgoing packet.
+ *
+ * The IPv6 Address field shall be present if the Outer Header Creation
+ * Description requests the creation of an IPv6 header. Otherwise it shall
+ * not be present. When present, it shall contain the destination IPv6 address
+ * to set in the IPv6 header of the outgoing packet.
+ *
+ * The Port Number field shall be present if the Outer Header Creation
+ * Description requests the creation of a UDP/IP header
+ * (i.e. it is set to the value 4). Otherwise it shall not be present.
+ * When present, it shall contain the destination Port Number to set
+ * in the UDP header of the outgoing packet.
+ *
+ * The C-TAG field shall be present if the Outer Header Creation Description
+ * requests the setting of the C-Tag in Ethernet packet. Otherwise it shall
+ * not be present. When present, it shall contain the destination Customer-VLAN
+ * tag to set in the Customer-VLAN tag header of the outgoing packet.
+ *
+ * The S-TAG field shall be present if the Outer Header Creation Description
+ * requests the setting of the S-Tag in Ethernet packet. Otherwise it shall
+ * not be present. When present, it shall contain the destination Service-VLAN
+ * tag to set in the Service-VLAN tag header of the outgoing packet.
+ */
+typedef struct ogs_pfcp_outer_header_creation_s {
+ED8(uint8_t     stag:1;,
+    uint8_t     ctag:1;,
+    uint8_t     ip6:1;,
+    uint8_t     ip4:1;,
+    uint8_t     udp6:1;,
+    uint8_t     udp4:1;,
+    uint8_t     gtpu6:1;,
+    uint8_t     gtpu4:1;)
+ED4(uint8_t     spare:5;,
+    uint8_t     ssm_c_teid:1;,
+    uint8_t     n6:1;,
+    uint8_t     n19:1;)
+    uint32_t    teid;
+    union {
+        uint32_t addr;
+        uint8_t addr6[OGS_IPV6_LEN];
+        struct {
+            uint32_t addr;
+            uint8_t addr6[OGS_IPV6_LEN];
+        } both;
+    };
+} __attribute__ ((packed)) ogs_pfcp_outer_header_creation_t;
+
+/*
+ * 8.2.82 User Plane IP Resource Information
  *
  * The following flags are coded within Octet 5:
  * - Bit 1 – V4: If this bit is set to "1", then the IPv4 address field
@@ -779,328 +833,902 @@ int ogs_pco_build(unsigned char *data, int data_len, ogs_pco_t *pco);
  * identifying the Source Interface with which the IP address or TEID Range
  * is associated.
  */
+int16_t ogs_pfcp_build_user_plane_ip_resource_info(
+        ogs_tlv_octet_t *octet,
+        ogs_user_plane_ip_resource_info_t *info,
+        void *data, int data_len);
+int16_t ogs_pfcp_parse_user_plane_ip_resource_info(
+        ogs_user_plane_ip_resource_info_t *info,
+        ogs_tlv_octet_t *octet);
 
-/* Flags(1) + TEID Range(1) + IPV4(4) + IPV6(16) + Source Interface(1) = 23 */
-#define OGS_MAX_USER_PLANE_IP_RESOURCE_INFO_LEN \
-    (23 + (OGS_MAX_APN_LEN+1))
-typedef struct ogs_user_plane_ip_resource_info_s {
+/*
+ * 8.2.5 SDF Filter
+ *
+ * The SDF Filter IE type shall be encoded as shown in Figure 8.2.5-1.
+ * It contains an SDF Filter, i.e. a single IP flow packet filter.
+ *
+ * The following flags are coded within Octet 5:
+ * - Bit 1 – FD (Flow Description): If this bit is set to "1",
+ *   then the Length of Flow Description and the Flow Description fields
+ *   shall be present, otherwise they shall not be present.
+ * - Bit 2 – TTC (ToS Traffic Class): If this bit is set to "1",
+ *   then the ToS Traffic Class field shall be present,
+ *   otherwise the ToS Traffic Class field shall not be present.
+ * - Bit 3 – SPI (Security Parameter Index): If this bit is set to "1",
+ *   then the Security Parameter Index field shall be present,
+ *   otherwise the Security Parameter Index field shall not be present.
+ * - Bit 4 – FL (Flow Label): If this bit is set to "1",
+ *   then the Flow Label field shall be present, otherwise the Flow Label field
+ *   shall not be present.
+ * - Bit 5 – BID (Bidirectional SDF Filter): If this bit is set to "1",
+ *   then the SDF Filter ID shall be present, otherwise the SDF Filter ID
+ *   shall not be present.
+ * - Bit 6 to 8: Spare, for future use and set to 0.
+ *
+ * The Flow Description field, when present, shall be encoded as an OctetString
+ * as specified in clause 5.4.2 of 3GPP TS 29.212 [8].
+ *
+ * The ToS Traffic Class field, when present, shall be encoded as an OctetString
+ * on two octets as specified in clause 5.3.15 of 3GPP TS 29.212 [8].
+ *
+ * The Security Parameter Index field, when present, shall be encoded as
+ * an OctetString on four octets and shall contain the IPsec security parameter
+ * index (which is a 32-bit field), as specified in clause 5.3.51
+ * of 3GPP TS 29.212 [8].
+ *
+ * The Flow Label field, when present, shall be encoded as an OctetString
+ * on 3 octets as specified in clause 5.3.52 of 3GPP TS 29.212 [8] and
+ * shall contain an IPv6 flow label (which is a 20-bit field).
+ *
+ * The bits 8 to 5 of the octet "v" shall be spare and set to zero, and
+ * the remaining 20 bits shall contain the IPv6 flow label.
+ *
+ * An SDF Filter may:
+ *
+ * - be a pattern for matching the IP 5 tuple (source IP address or
+ *   IPv6 network prefix, destination IP address or IPv6 network prefix,
+ *   source port number, destination port number, protocol ID of the protocol
+ *   above IP). In the pattern:
+ *   - a value left unspecified in a filter matches any value of
+ *     the corresponding information in a packet;
+ *   - an IP address may be combined with a prefix mask;
+ *   - port numbers may be specified as port ranges;
+ *   - the pattern can be extended by the Type of Service (TOS) (IPv4) /
+ *     Traffic class (IPv6) and Mask;
+ *
+ * - consist of the destination IP address and optional mask, protocol ID
+ *   of the protocol above IP, the Type of Service (TOS) (IPv4) /
+ *   Traffic class (IPv6) and Mask and the IPsec Security Parameter Index (SPI);
+ *
+ * - consist of the destination IP address and optional mask,
+ *   the Type of Service (TOS) (IPv4) / Traffic class (IPv6) and Mask and
+ *   the Flow Label (IPv6).
+ *
+ * NOTE 1: The details about the IPsec Security Parameter Index (SPI),
+ *         the Type of Service (TOS) (IPv4) / Traffic class (IPv6) and Mask and
+ *         the Flow Label (IPv6) are defined in 3GPP TS 23.060 [19] clause 15.3.
+ *
+ * - extend the packet inspection beyond the possibilities described above and
+ *   look further into the packet. Such service data flow filters need
+ *   to be predefined in the PGW-U, as specified in clause 5.11
+ *   of 3GPP TS 23.214 [2].
+ *
+ * NOTE 2: Such filters may be used to support filtering with respect
+ *         to a service data flow based on the transport and application
+ *         protocols used above IP, e.g. for HTTP and WAP. Filtering
+ *         for further application protocols and services can also be supported.
+ *
+ * The SDF Filter ID, when present, shall be encoded as
+ * an Unsigned32 binary integer value. It shall uniquely identify
+ * an SDF Filter among all the SDF Filters provisioned for a given PFCP Session.
+ * The source/destination IP address and port information, in a bidirectional
+ * SDF Filter, shall be set as for downlink IP flows. The SDF filter
+ * for the opposite direction has the same parameters, but having
+ * the source and destination address/port parameters swapped. When being
+ * provisioned with a bidirectional SDF filter in a PDR,
+ * the UP function shall apply the SDF filter as specified in clause 5.2.1A.2A.
+ */
+
+typedef struct ogs_pfcp_sdf_filter_s {
     union {
         struct {
-ED6(uint8_t     spare:1;,
-    uint8_t     assosi:1;,
-    uint8_t     assoni:1;,
-    uint8_t     teidri:3;,
-    uint8_t     v6:1;,
-    uint8_t     v4:1;)
+ED6(uint8_t     spare1:3;,
+    uint8_t     bid:1;,
+    uint8_t     fl:1;,
+    uint8_t     spi:1;,
+    uint8_t     ttc:1;,
+    uint8_t     fd:1;)
         };
         uint8_t flags;
     };
 
-    /*
-     * OGS_PFCP-GTPU-TEID   = INDEX              | TEID_RANGE
-     * INDEX                = OGS_PFCP-GTPU-TEID & ~TEID_RANGE
-     */
-#define OGS_PFCP_GTPU_TEID_TO_INDEX(__tEID, __iND, __rANGE) \
-    (__tEID & ~(__rANGE << (32 - __iND)))
-#define OGS_PFCP_GTPU_INDEX_TO_TEID(__iNDEX, __iND, __rANGE) \
-    (__iNDEX | (__rANGE << (32 - __iND)))
-    uint8_t     teid_range;
-    uint32_t    addr;
-    uint8_t     addr6[OGS_IPV6_LEN];
-    char        network_instance[OGS_MAX_APN_LEN+1];
-    uint8_t     source_interface;
-} __attribute__ ((packed)) ogs_user_plane_ip_resource_info_t;
+    uint8_t     spare2;
+    uint16_t    flow_description_len;
+    char        *flow_description;
+    uint16_t    tos_traffic_class;
+    uint32_t    security_parameter_index;
+    uint32_t    flow_label;
+    uint32_t    sdf_filter_id;
+} __attribute__ ((packed)) ogs_pfcp_sdf_filter_t;
 
-int ogs_sockaddr_to_user_plane_ip_resource_info(
-    ogs_sockaddr_t *addr, ogs_sockaddr_t *addr6,
-    ogs_user_plane_ip_resource_info_t *info);
-int ogs_user_plane_ip_resource_info_to_sockaddr(
-    ogs_user_plane_ip_resource_info_t *info,
-    ogs_sockaddr_t **addr, ogs_sockaddr_t **addr6);
+int16_t ogs_pfcp_build_sdf_filter(
+        ogs_tlv_octet_t *octet, ogs_pfcp_sdf_filter_t *filter,
+        void *data, int data_len);
+int16_t ogs_pfcp_parse_sdf_filter(
+        ogs_pfcp_sdf_filter_t *filter, ogs_tlv_octet_t *octet);
 
-typedef struct ogs_slice_data_s {
-    ogs_s_nssai_t s_nssai;
-    bool default_indicator;
-
-    uint32_t context_identifier; /* EPC for checking default APN */
-
-#define OGS_ALL_APN_CONFIGURATIONS_INCLUDED 0
-#define OGS_MODIFIED_ADDED_APN_CONFIGURATIONS_INCLUDED 1
-    uint32_t all_apn_config_inc;
-
-    int num_of_session;
-    ogs_session_t session[OGS_MAX_NUM_OF_SESS];
-} ogs_slice_data_t;
-
-ogs_slice_data_t *ogs_slice_find_by_s_nssai(
-        ogs_slice_data_t *slice_data, int num_of_slice_data,
-        ogs_s_nssai_t *s_nssai);
-
-typedef struct ogs_subscription_data_s {
-#define OGS_ACCESS_RESTRICTION_UTRAN_NOT_ALLOWED                (1)
-#define OGS_ACCESS_RESTRICTION_GERAN_NOT_ALLOWED                (1<<1)
-#define OGS_ACCESS_RESTRICTION_GAN_NOT_ALLOWED                  (1<<2)
-#define OGS_ACCESS_RESTRICTION_I_HSPA_EVOLUTION_NOT_ALLOWED     (1<<3)
-#define OGS_ACCESS_RESTRICTION_WB_E_UTRAN_NOT_ALLOWED           (1<<4)
-#define OGS_ACCESS_RESTRICTION_HO_TO_NON_3GPP_ACCESS_NOT_ALLOWED (1<<5)
-#define OGS_ACCESS_RESTRICTION_NB_IOT_NOT_ALLOWED               (1<<6)
-    uint32_t                access_restriction_data;
-#define OGS_SUBSCRIBER_STATUS_SERVICE_GRANTED                   0
-#define OGS_SUBSCRIBER_STATUS_OPERATOR_DETERMINED_BARRING       1
-    uint32_t                subscriber_status;
-#define OGS_OP_DET_BARRING_ALL_PS_BARRED                                            (1<<0)
-#define OGS_OP_DET_BARRING_ROAM_ACC_HPLMN_AP_BARRED                                 (1<<1)
-#define OGS_OP_DET_BARRING_ROAM_ACC_VPLMN_AP_BARRED                                 (1<<2)
-#define OGS_OP_DET_BARRING_ALL_OUT_CALLS                                            (1<<3)
-#define OGS_OP_DET_BARRING_ALL_OUT_INT_CALLS                                        (1<<4)
-#define OGS_OP_DET_BARRING_ALL_OUT_INT_CALLS_EXCL_HPLMN_COUNTRY                     (1<<5)
-#define OGS_OP_DET_BARRING_ALL_OUT_INTERZONE_CALLS                                  (1<<6)
-#define OGS_OP_DET_BARRING_ALL_OUT_INTERZONE_CALLS_EXCL_HPLMN_COUNTRY               (1<<7)
-#define OGS_OPD_ETEBARRING_OUT_INT_CALLS_EXCL_EXCL_HPLMN_COUNTRY_AND_INTERZONE_CALLS (1<<8)
-    uint32_t operator_determined_barring; /* 3GPP TS 29.272 7.3.30 */
-#define OGS_NETWORK_ACCESS_MODE_PACKET_AND_CIRCUIT              0
-#define OGS_NETWORK_ACCESS_MODE_RESERVED                        1
-#define OGS_NETWORK_ACCESS_MODE_ONLY_PACKET                     2
-    uint32_t                network_access_mode;
-
-    ogs_bitrate_t           ambr;                           /* UE-AMBR */
-
-#define OGS_RAU_TAU_DEFAULT_TIME                (12*60)     /* 12 min */
-    uint32_t                subscribed_rau_tau_timer;       /* unit : seconds */
-
-    int num_of_slice;
-    ogs_slice_data_t slice[OGS_MAX_NUM_OF_SLICE];
-
-    char *imsi;
-
-#define OGS_MAX_NUM_OF_MSISDN                                   2
-    int num_of_msisdn;
-    struct {
-        uint8_t buf[OGS_MAX_MSISDN_LEN];
-        int len;
-        char bcd[OGS_MAX_MSISDN_BCD_LEN+1];
-    } msisdn[OGS_MAX_NUM_OF_MSISDN];
-
-    char *mme_host;
-    char *mme_realm;
-    bool purge_flag;
-} ogs_subscription_data_t;
-
-void ogs_subscription_data_free(ogs_subscription_data_t *subscription_data);
-
-typedef struct ogs_session_data_s {
-    ogs_session_t session;
-#define OGS_MAX_NUM_OF_PCC_RULE         8   /* Num of PCC Rule */
-    ogs_pcc_rule_t pcc_rule[OGS_MAX_NUM_OF_PCC_RULE];
-    int num_of_pcc_rule;
-} ogs_session_data_t;
-
-#define OGS_STORE_SESSION_DATA(__dST, __sRC) \
-    do { \
-        int rv, j; \
-        ogs_assert((__dST) != NULL); \
-        ogs_assert((__sRC) != NULL); \
-        OGS_SESSION_DATA_FREE(__dST); \
-        if ((__sRC)->session.name) { \
-            (__dST)->session.name = ogs_strdup((__sRC)->session.name); \
-            ogs_assert((__dST)->session.name); \
-        } \
-        (__dST)->session.session_type = (__sRC)->session.session_type; \
-        memcpy(&(__dST)->session.ambr, &(__sRC)->session.ambr, \
-                sizeof((__dST)->session.ambr)); \
-        memcpy(&(__dST)->session.qos, &(__sRC)->session.qos, \
-                sizeof((__dST)->session.qos)); \
-        (__dST)->num_of_pcc_rule = (__sRC)->num_of_pcc_rule; \
-        for (j = 0; j < (__dST)->num_of_pcc_rule; j++) { \
-            rv = ogs_check_qos_conf(&(__sRC)->pcc_rule[j].qos); \
-            ogs_assert(rv == OGS_OK); \
-            OGS_STORE_PCC_RULE(&(__dST)->pcc_rule[j], &(__sRC)->pcc_rule[j]); \
-        } \
-    } while(0)
-
-#define OGS_SESSION_DATA_FREE(__sESSdATA) \
-    do { \
-        int i; \
-        ogs_assert((__sESSdATA) != NULL); \
-        if ((__sESSdATA)->session.name) \
-            ogs_free((__sESSdATA)->session.name); \
-        for (i = 0; i < (__sESSdATA)->num_of_pcc_rule; i++) \
-            OGS_PCC_RULE_FREE(&(__sESSdATA)->pcc_rule[i]); \
-        memset((__sESSdATA), 0, sizeof(ogs_session_data_t)); \
-    } while(0)
-
-typedef struct ogs_media_sub_component_s {
-    uint32_t            flow_number;
 /*
- * TS29.214
- * 5.3.12 Flow-Usage AVP
- *   NO_INFORMATION(0)
- *   RTCP(1)
- *   AF_SIGNALLING(2)
+ * 8.2.8 MBR
  *
- * TS29.514
- * 5.6.3.14 Enumeration: FlowUsage
- *   NO_INFO : 1
- *   RTCP : 2
- *   AF_SIGNALLING : 3
+ * The UL/DL MBR fields shall be encoded as kilobits per second
+ * (1 kbps = 1000 bps) in binary value. The UL/DL MBR fields may require
+ * converting values in bits per second to kilobits per second
+ * when the UL/DL MBR values are received from an interface other than
+ * GTPv2 interface. If such conversions result in fractions,
+ * then the value of UL/DL MBR fields shall be rounded upwards.
+ * The range of UL/DL MBR is specified in 3GPP TS 36.413 [10].
  *
- * EPC and 5GC have different values for FlowUsage
- * At this point, we will use the 5GC value.
+ * NOTE: The encoding is aligned on the encoding specified
+ * in 3GPP TS 29.274 [9].
  */
-#define OGS_FLOW_USAGE_NO_INFO          1
-#define OGS_FLOW_USAGE_RTCP             2
-#define OGS_FLOW_USAGE_AF_SIGNALLING    3
-    uint32_t            flow_usage;
-    ogs_flow_t          flow[OGS_MAX_NUM_OF_FLOW_IN_MEDIA_SUB_COMPONENT];
-    int                 num_of_flow;
-} ogs_media_sub_component_t;
 
-typedef struct ogs_media_component_s {
-    uint32_t            media_component_number;
-    uint32_t            media_type;
+#define OGS_PFCP_BITRATE_LEN 10
+typedef struct ogs_pfcp_bitrate_s {
+    uint64_t    uplink;
+    uint64_t    downlink;
+} __attribute__ ((packed)) ogs_pfcp_bitrate_t;
 
-    uint64_t            max_requested_bandwidth_dl;
-    uint64_t            max_requested_bandwidth_ul;
-    uint64_t            min_requested_bandwidth_dl;
-    uint64_t            min_requested_bandwidth_ul;
-    uint64_t            rr_bandwidth;
-    uint64_t            rs_bandwidth;
+int16_t ogs_pfcp_build_bitrate(ogs_tlv_octet_t *octet,
+        ogs_pfcp_bitrate_t *bitrate, void *data, int data_len);
+int16_t ogs_pfcp_parse_bitrate(
+        ogs_pfcp_bitrate_t *bitrate, ogs_tlv_octet_t *octet);
 
-    int                 flow_status;
+#define OGS_PFCP_GATE_OPEN 0
+#define OGS_PFCP_GATE_CLOSE 1
+typedef struct ogs_pfcp_gate_status_s {
+    union {
+        struct {
+ED3(uint8_t     spare:4;,
+    uint8_t     uplink:2;,
+    uint8_t     downlink:2;)
+        };
+        uint8_t value;
+    };
+} __attribute__ ((packed)) ogs_pfcp_gate_status_t;
 
-#define OGS_MAX_NUM_OF_MEDIA_SUB_COMPONENT     8
-    ogs_media_sub_component_t sub[OGS_MAX_NUM_OF_MEDIA_SUB_COMPONENT];
-    int                 num_of_sub;
-} ogs_media_component_t;
-
-#define OGS_MAX_NUM_OF_SPT 20
-#define OGS_MAX_NUM_OF_IFC 20
+/* 8.2.19 Reporting Triggers
+ */
+typedef struct ogs_pfcp_reporting_triggers_s {
+    union {
+        struct {
+ED8(uint8_t linked_usage_reporting:1;,
+    uint8_t dropped_dl_traffic_threshold:1;,
+    uint8_t stop_of_traffic:1;,
+    uint8_t start_of_traffic:1;,
+    uint8_t quota_holding_time:1;,
+    uint8_t time_threshold:1;,
+    uint8_t volume_threshold:1;,
+    uint8_t periodic_reporting:1;)
+        };
+        uint8_t reptri_5;
+    };
+    union {
+        struct {
+ED8(uint8_t quota_validity_time:1;,
+    uint8_t ip_multicast_join_leave:1;,
+    uint8_t event_quota:1;,
+    uint8_t event_threshold:1;,
+    uint8_t mac_addresses_reporting:1;,
+    uint8_t envelope_closure:1;,
+    uint8_t time_quota:1;,
+    uint8_t volume_quota:1;)
+        };
+        uint8_t reptri_6;
+    };
+    union {
+        struct {
+ED3(uint8_t spare:6;,
+    uint8_t user_plane_inactivity_timer:1;,
+    uint8_t report_the_end_marker_reception:1;)
+        };
+        uint8_t reptri_7;
+    };
+} __attribute__ ((packed)) ogs_pfcp_reporting_triggers_t;
 
 /*
- * Defines matching mechanism type of SPT
+ * 8.2.21 Report Type
+ *
+ * Octet 5 shall be encoded as follows:
+ *
+ * - Bit 1 – DLDR (Downlink Data Report): when set to 1,
+ *           this indicates Downlink Data Report
+ * - Bit 2 – USAR (Usage Report): when set to 1, this indicates a Usage Report
+ * - Bit 3 – ERIR (Error Indication Report): when set to 1,
+ *           this indicates an Error Indication Report.
+ * - Bit 4 – UPIR (User Plane Inactivity Report): when set to 1,
+ *           this indicates a User Plane Inactivity Report.
+ * - Bit 5 – TMIR (TSC Management Information Report): when set to "1",
+ *           this indicates a TSC Management Information Report.
+ * - Bit 6 – Session Report (SESR): when set to "1",
+ *           this indicates a Session Report.
+ * - Bit 7 – UISR (UP Initiated Session Request): when set to "1",
+ *           this indicates it is a UP function initiated request
+ *           for a reason which is indicated by the PFCPSRReq-Flags,
+ *           for the PFCP session.
+ * - Bit 8 – Spare, for future use and set to "0".
+ *
+ * At least one bit shall be set to 1. Several bits may be set to 1.
  */
-typedef enum {
-    OGS_SPT_INVALID_TYPE,
-    OGS_SPT_HAS_METHOD,
-    OGS_SPT_HAS_SESSION_CASE,
-    OGS_SPT_HAS_SIP_HEADER,
-    OGS_SPT_HAS_SDP_LINE,
-    OGS_SPT_HAS_REQUEST_URI,
-} ogs_spt_type_e;
-
-/**************************************************
- * Service Point Trigger Structure (SPT)         */
-typedef struct ogs_spt_s {
-    /* Matching mechanism type of SPT */
-    ogs_spt_type_e type;
-    /* Indicates if the Service Point Trigger instance is negated */
-    int        condition_negated;
-    /* The SPT group or list of SPT groups assigned to the SPT */
-    int        group;
-    /* The method of the SIP request */
-    const char *method;
-    /* The direction of the SIP request as evaluated by the S-CSCF */
-    int        session_case;
-    /* A header in the SIP request*/
-    const char *header;
-    /* Optionally the value of the header in the SIP request */
-	const char *header_content;
-    /* A SDP line within the body (if any) of a SIP request */
-    const char *sdp_line;
-    /* Optionally the value in the SDP line of a SIP request */
-	const char *sdp_line_content;
-    /* The request-URI of the SIP request */
-    const char *request_uri;
-} ogs_spt_t;
+typedef struct ogs_pfcp_report_type_s {
+    union {
+        struct {
+ED8(uint8_t     spare:1;,
+    uint8_t     up_initiated_session_request:1;,
+    uint8_t     session_report:1;,
+    uint8_t     tsc_management_information_report:1;,
+    uint8_t     user_plane_inactivity_report:1;,
+    uint8_t     error_indication_report:1;,
+    uint8_t     usage_report:1;,
+    uint8_t     downlink_data_report:1;)
+        };
+        uint8_t value;
+    };
+} __attribute__ ((packed)) ogs_pfcp_report_type_t;
 
 /*
- * Defines what logical operators should be used between SPTs belonging to
- * different groups
+ * 8.2.27 Downlink Data Service Information
  */
-typedef enum {
-    OGS_DISJUNCTIVE_NORMAL_FORMAT,  /* an ORed set of ANDed subsets */
-    OGS_CONJUNCTIVE_NORMAL_FORMAT   /* an ANDed set of ORed subsets */
-} ogs_condition_type_cnf_e;
-
-/**************************************************
- * Trigger Point Structure
- * Each TriggerPoint is made up of Service Point Trigger (SPTs) which are
- * individual rules that are matched or not matched, that are either combined
- * as logical AND or logical OR statements when evaluated.
- */
-typedef struct ogs_trigger_point_s {
-    int num_of_spt;
-    ogs_condition_type_cnf_e condition_type_cnf;
-    ogs_spt_t spt[OGS_MAX_NUM_OF_SPT];
-} ogs_trigger_point_t;
-
-/**************************************************
- * Application Server Structure                  */
-typedef struct ogs_application_server_s {
-    const char *server_name;
-    int        default_handling;
-} ogs_application_server_t;
-
-/**************************************************
- * IFC Structure
- * 3GPP TS 29.562
- */
-typedef struct ogs_ifc_s {
-    /*
-     * The priority of the IFC.
-     * The higher the Priority Number the lower the priority of the Filter
-     * Criteria is
-     */
-    int priority;
-    /*
-     * The conditions that should be checked to find out
-     * if the indicated Application Server should be contacted or not
-     */
-    ogs_trigger_point_t trigger_point;
-    /*
-     * the Application Server which shall be triggered
-     * if the conditions are met
-     */
-    ogs_application_server_t application_server;
-} ogs_ifc_t;
-
-typedef struct ogs_ims_data_s {
-    int num_of_msisdn;
+typedef struct ogs_pfcp_downlink_data_service_information_s {
     struct {
-        uint8_t buf[OGS_MAX_MSISDN_LEN];
-        int len;
-        char bcd[OGS_MAX_MSISDN_BCD_LEN+1];
-    } msisdn[OGS_MAX_NUM_OF_MSISDN];
+ED3(uint8_t     spare:6;,
+    uint8_t     qfii:1;,
+    uint8_t     ppi:1;)
+    };
+    union {
+        uint8_t paging_policy_indication_value;
+        uint8_t qfi;
+        struct {
+            uint8_t paging_policy_indication_value;
+            uint8_t qfi;
+        } both;
+    };
+} __attribute__ ((packed)) ogs_pfcp_downlink_data_service_information_t;
 
-#define OGS_MAX_NUM_OF_MEDIA_COMPONENT 16
-    ogs_media_component_t media_component[OGS_MAX_NUM_OF_MEDIA_COMPONENT];
-    int num_of_media_component;
+/*
+ * 8.2.31 PFCPSMReq-Flags
+ *
+ * The following bits within Octet 5 shall indicate:
+ * - Bit 1 – DROBU (Drop Buffered Packets): if this bit is set to 1,
+ *   it indicates that the UP function shall drop all the packets currently
+ *   buffered for the PFCP session, if any, prior to further applying
+ *   the action specified in the Apply Action value of the FARs.
+ * - Bit 2 – SNDEM (Send End Marker Packets): if this bit is set to 1,
+ *   it indicates that the UP function shall construct and send End Marker
+ *   packets towards the old F-TEID of the downstream node when switching
+ *   to the new F- TEID.
+ * - Bit 3 – QAURR (Query All URRs): if this bit is set to 1, it indicates
+ *   that the UP function shall return immediate usage report(s)
+ *   for all the URRs previously provisioned for this PFCP session.
+ * - Bit 4 - SUMPC (Stop of Usage Measurement to Pause Charging):
+ *   if this bit is set to "1", it indicates that the UP function
+ *   shall stop the usage measurement for all URRs
+ *   with the "ASPOC" flag set to "1".
+ * - Bit 5 - RUMUC (Resume of Usage Measurement to Un-pause of Charging):
+ *   if this bit is set to "1", it indicates that the UP function
+ *   shall resume the usage measurement for all URRs
+ *   with the "ASPOC" flag set to "1".
+ * - Bit 6 - DETEID (Delete All DL N3mb and/or N19mb F-TEIDs):
+ *   if this bit is set to "1", it indicates that the MB-UPF
+ *   shall delete all NG-RAN N3mb DL F-TEIDs
+ *   and all UPF N19mb DL F-TEIDs which were provisioned
+ *   in Add MBS Unicast Parameters IEs for the MBS session
+ *   (see clause 5.34.2.4).
+ * - Bit 7 to 8 – Spare, for future use, shall be set to "0" by the sender
+ *   and discarded by the receiver.
+ */
+typedef struct ogs_pfcp_smreq_flags_s {
+    union {
+        struct {
+ED7(uint8_t     spare:2;,
+    uint8_t     delete_all_dl_n3mb_and_or_n19mb_f_teids:1;,
+    uint8_t     resume_of_usage_measurement_to_un_pause_of_charging:1;,
+    uint8_t     stop_of_usage_measurement_to_pause_charging:1;,
+    uint8_t     query_all_urrs:1;,
+    uint8_t     send_end_marker_packets:1;,
+    uint8_t     drop_buffered_packets:1;)
+        };
+        uint8_t value;
+    };
+} __attribute__ ((packed)) ogs_pfcp_smreq_flags_t;
 
-    int num_of_ifc;
-    ogs_ifc_t ifc[OGS_MAX_NUM_OF_IFC];
-} ogs_ims_data_t;
+/*
+ * 8.2.40 Measurement Method
+ *
+ * Octet 5 shall be encoded as follows:
+ * - Bit 1 – DURAT (Duration): when set to "1",
+ *   this indicates a request for measuring the duration of the traffic.
+ * - Bit 2 – VOLUM (Volume): when set to "1",
+ *   this indicates a request for measuring the volume of the traffic.
+ * - Bit 3 – EVENT (Event): when set to "1",
+ *   this indicates a request for measuring the events.
+ * - Bit 4 to 8: Spare, for future use and set to "0".
+ *
+ * At least one bit shall be set to "1". Several bits may be set to "1".
+ */
+#define OGS_PFCP_MEASUREMENT_METHOD_DURATION    1
+#define OGS_PFCP_MEASUREMENT_METHOD_VOLUME      2
+#define OGS_PFCP_MEASUREMENT_METHOD_EVENT       4
+typedef uint8_t ogs_pfcp_measurement_method_t;
 
-void ogs_ims_data_free(ogs_ims_data_t *ims_data);
+/*
+ * 8.2.41 Usage Report Trigger
+ *
+ * The Usage Report Trigger IE shall be encoded as shown in Figure 8.2.41-1.
+ * It indicates the trigger of the usage report.
+ */
+typedef struct ogs_pfcp_usage_report_trigger_s {
+    union {
+        struct {
+ED8(uint8_t immediate_report:1;;,
+    uint8_t dropped_dl_traffic_threshold:1;,
+    uint8_t stop_of_traffic:1;,
+    uint8_t start_of_traffic:1;,
+    uint8_t quota_holding_time:1;,
+    uint8_t time_threshold:1;,
+    uint8_t volume_threshold:1;,
+    uint8_t periodic_reporting:1;)
+        };
+        uint8_t reptri_5;
+    };
+    union {
+        struct {
+ED8(uint8_t event_threshold:1;,
+    uint8_t mac_addresses_reporting:1;,
+    uint8_t envelope_closure:1;,
+    uint8_t monitoring_time:1;,
+    uint8_t termination_report:1;,
+    uint8_t linked_usage_reporting:1;,
+    uint8_t time_quota:1;,
+    uint8_t volume_quota:1;)
+        };
+        uint8_t reptri_6;
+    };
+    union {
+        struct {
+ED7(uint8_t spare:2;,
+    uint8_t user_plane_inactivity_timer:1;,
+    uint8_t report_the_end_marker_reception:1;,
+    uint8_t quota_validity_time:1;,
+    uint8_t ip_multicast_join_leave:1;,
+    uint8_t termination_by_up_function_report:1;,
+    uint8_t event_quota:1;)
+        };
+        uint8_t reptri_7;
+    };
+} __attribute__ ((packed)) ogs_pfcp_usage_report_trigger_t;
 
-int ogs_pcc_rule_num_of_flow_equal_to_media(
-        ogs_pcc_rule_t *pcc_rule, ogs_media_component_t *media_component);
-int ogs_pcc_rule_install_flow_from_media(
-        ogs_pcc_rule_t *pcc_rule, ogs_media_component_t *media_component);
-int ogs_pcc_rule_update_qos_from_media(
-        ogs_pcc_rule_t *pcc_rule, ogs_media_component_t *media_component);
+void ogs_pfcp_parse_usage_report_trigger(
+        ogs_pfcp_usage_report_trigger_t *rep_trig,
+        ogs_pfcp_tlv_usage_report_trigger_t *tlv);
 
-typedef struct ogs_datum_s {
-    unsigned char *data;
-    unsigned int size;
-} ogs_datum_t;
+/*
+ * 8.2.42 Measurement Period
+ *
+ * The Measurement Period IE contains the period, in seconds,
+ * for generating periodic usage reports or the periodic QoS monitoring reports.
+ * It shall be encoded as shown in Figure 8.2.42-1.
+ *
+ * The Measurement Period field shall be encoded
+ * as an Unsigned32 binary integer value.
+ */
+typedef uint32_t ogs_pfcp_measurement_period_t;
 
-typedef struct ogs_port_s {
-    bool presence;
-    uint16_t port;
-} ogs_port_t;
+/*
+ * 8.2.13 Volume Threshold
+ */
+typedef struct ogs_pfcp_volume_threshold_s {
+    union {
+        struct {
+ED4(uint8_t spare:5;,
+    uint8_t dlvol:1;,
+    uint8_t ulvol:1;,
+    uint8_t tovol:1;)
+        };
+    uint8_t flags;
+    };
+
+    uint64_t total_volume;
+    uint64_t uplink_volume;
+    uint64_t downlink_volume;
+
+} __attribute__ ((packed)) ogs_pfcp_volume_threshold_t;
+
+int16_t ogs_pfcp_build_volume(ogs_tlv_octet_t *octet,
+        ogs_pfcp_volume_threshold_t *volume, void *data, int data_len);
+int16_t ogs_pfcp_parse_volume(
+        ogs_pfcp_volume_threshold_t *volume, ogs_tlv_octet_t *octet);
+
+/*
+ * 8.2.50 Volume Quota
+ */
+typedef ogs_pfcp_volume_threshold_t ogs_pfcp_volume_quota_t;
+
+/*
+ * 8.2.113 Event Threshold
+ *
+ * The Event Threshold IE contains the Number of events after
+ * which the measurement report is to be generated by the UP function.
+ *
+ * It shall be encoded as shown in Figure 8.2.113-1.
+ */
+typedef uint32_t ogs_pfcp_event_threshold_t;
+
+/*
+ * 8.2.112 Event Quota
+ *
+ * The Event Quota IE type shall be encoded as shown in Figure 8.2.112-1.
+ * It contains the event quota to be monitored by the UP function.
+ */
+typedef uint32_t ogs_pfcp_event_quota_t;
+
+/*
+ * 8.2.14 Time Threshold
+ *
+ * The Time Threshold IE contains the traffic duration threshold
+ * to be monitored by the UP function. It shall be encoded as shown
+ * in Figure 8.2.14-1.
+ */
+typedef uint32_t ogs_pfcp_time_threshold_t;
+
+/*
+ * 8.2.51 Time Quota
+ *
+ * The Time Quota IE type shall be encoded as shown in Figure 8.2.51-1.
+ * It contains the time quota to be monitored by the UP function.
+ */
+typedef uint32_t ogs_pfcp_time_quota_t;
+
+/*
+ * 8.2.48 Quota Holding Time
+ *
+ * The Quota Holding Time IE type shall be encoded as shown in Figure 8.2.48-1.
+ * It contains the quota holding time in seconds.
+ *
+ * The Quota Holding Time value shall be encoded as
+ * an Unsigned32 binary integer value.
+ */
+typedef uint32_t ogs_pfcp_quota_holding_time_t;
+
+/*
+ * 8.2.132 Quota Validity Time
+ *
+ * The Quota Validity Time IE type shall be encoded as shown
+ * in Figure 8.2.132-1. It contains the quota validity time in seconds.
+ *
+ * The Quota Validity Time value shall be encoded as
+ * an Unsigned32 binary integer value.
+ */
+typedef uint32_t ogs_pfcp_quota_validity_time_t;
+
+/*
+ * 8.2.49 Dropped DL Traffic Threshold
+ *
+ * The Dropped DL Traffic Threshold IE type shall be encoded as shown
+ * in Figure 8.2.49-1. It contains the dropped DL traffic volume thresholds
+ * to be monitored by the UP function.
+ *
+ * The following flags are coded within Octet 5:
+ * - Bit 1 – DLPA: If this bit is set to "1",
+ *   then the Downlink Packets field shall be present,
+ *   otherwise the Downlink Packets field shall not be present.
+ * - Bit 2 – DLBY: If this bit is set to "1",
+ *   then the Number of Bytes of Downlink Data field shall be present,
+ *   otherwise the Number of Bytes of Downlink Data field shall not be present.
+ * - Bit 3 to 8: Spare, for future use and set to "0".
+ *
+ *
+ * The Downlink Packets fields shall be encoded as an Unsigned64 binary
+ * integer value. It shall contain a number of downlink packets.
+ *
+ * The Number of Bytes of Downlink Data fields shall be encoded
+ * as an Unsigned64 binary integer value. It shall contain the number
+ * of bytes of the downlink data.
+ */
+typedef struct ogs_pfcp_dropped_dl_traffic_threshold_s {
+    union {
+        struct {
+ED3(uint8_t spare:6;,
+    uint8_t dlby:1;,
+    uint8_t dlpa:1;)
+        };
+        uint8_t flags;
+    };
+    uint64_t downlink_packets;
+    uint64_t number_of_bytes_of_downlink_data;
+} __attribute__ ((packed)) ogs_pfcp_dropped_dl_traffic_threshold_t;
+
+int16_t ogs_pfcp_build_dropped_dl_traffic_threshold(
+        ogs_tlv_octet_t *octet,
+        ogs_pfcp_dropped_dl_traffic_threshold_t *threshold,
+        void *data, int data_len);
+int16_t ogs_pfcp_parse_dropped_dl_traffic_threshold(
+        ogs_pfcp_dropped_dl_traffic_threshold_t *threshold,
+        ogs_tlv_octet_t *octet);
+
+/** 8.2.71 UR-SEQN
+ *
+ * The UR-SEQN (Usage Report Sequence Number) IE identifies the order
+ * in which a usage report is generated for a
+ * given URR. It shall be encoded as shown in Figure 8.2.71-1.
+ *
+ * The UR-SEQN value shall be encoded as an Unsigned32 binary integer value.
+*/
+typedef uint32_t ogs_pfcp_urr_ur_seqn_t;
+
+/** 8.2.52 Start Time
+ *
+ * The Start Time IE indicates the time at which the UP function started
+ * to collect the charging information. It shall be encoded as shown
+ * in Figure 8.2.52-1.
+ *
+ * The Start Time field shall contain a UTC time. Octets 5 to 8 shall
+ * be encoded in the same format as the first four octets
+ * of the 64-bit timestamp format as defined in clause 6 of IETF RFC 5905 [12].
+ *
+ * NOTE: The encoding is defined as the time in seconds relative to 00:00:00
+ * on 1 January 1900.
+ */
+typedef uint32_t ogs_pfcp_start_time_t;
+
+/** 8.2.53 End Time
+ * The End Time IE indicates the time at which the UP function ended
+ * to collect the charging information. It shall be encoded as shown
+ * in Figure 8.2.53-1.
+ *
+ * The End Time field shall contain a UTC time. Octets 5 to 8 shall be
+ * encoded in the same format as the first four octets of the 64-bit timestamp
+ * format as defined in clause 6 of IETF RFC 5905 [12].
+ *
+ * NOTE: The encoding is defined as the time in seconds relative to 00:00:00
+ * on 1 January 1900.
+*/
+typedef uint32_t ogs_pfcp_end_time_t;
+
+/** 8.2.45 Duration Measurement
+ *
+ * The Duration Measurement IE type shall be encoded as shown
+ * in Figure 8.2.45-1. It contains the used time in seconds
+ *
+ * The Duration value shall be encoded as an Unsigned32 binary integer value.
+*/
+typedef uint32_t ogs_pfcp_duration_measurement_t;
+
+/** 8.2.46 Time of First Packet
+ *
+ * The Time of First Packet IE indicates the time stamp for the first
+ * IP packet transmitted for a given usage report. It shall be encoded
+ * as shown in Figure 8.2.46-1.
+ *
+ * The End Time field shall contain a UTC time. Octets 5 to 8 shall
+ * be encoded in the same format as the first four octets
+ * of the 64-bit timestamp format as defined in clause 6 of IETF RFC 5905 [12].
+ *
+ * NOTE: The encoding is defined as the time in seconds relative to 00:00:00
+ * on 1 January 1900.
+*/
+typedef uint32_t ogs_pfcp_time_of_first_packet_t;
+
+/** 8.2.47 Time of Last Packet
+ *
+ * The Time of Last Packet IE indicates the time stamp for the last
+ * IP packet transmitted for a given usage report. It shall be encoded
+ * as shown in Figure 8.2.47-1.
+ *
+ * The End Time field shall contain a UTC time. Octets 5 to 8 shall
+ * be encoded in the same format as the first four octets
+ * of the 64-bit timestamp format as defined in clause 6 of IETF RFC 5905 [12].
+ *
+ * NOTE: The encoding is defined as the time in seconds relative to 00:00:00
+ * on 1 January 1900.
+*/
+typedef uint32_t ogs_pfcp_time_of_last_packet_t;
+
+/** 8.2.44 Volume Measurement
+ *
+ * The Volume Measurement IE contains the measured traffic volumes.
+ * It shall be encoded as shown in Figure 8.2.44-1.
+ *
+ * The following flags are coded within Octet 5:
+ *
+ * - Bit 1 – TOVOL: If this bit is set to "1", then the Total Volume field
+ *   shall be present, otherwise the Total Volume field shall not be present.
+ * - Bit 2 – ULVOL: If this bit is set to "1", then the Uplink Volume field
+ *   shall be present, otherwise the Uplink Volume field shall not be present.
+ * - Bit 3 – DLVOL: If this bit is set to "1", then the Downlink Volume field
+ *   shall be present, otherwise the Downlink Volume field shall not be present.
+ * - Bit 4 – TONOP: If this bit is set to "1", then the Total Number of Packets
+ *   field shall be present, otherwise the Total Number of Packets field
+ *   shall not be present.
+ * - Bit 5 – ULNOP: If this bit is set to "1", then the Uplink Number
+ *   of Packets field shall be present, otherwise the Uplink Number
+ *   of Packets field shall not be present.
+ * - Bit 6 – DLNOP: If this bit is set to "1", then the Downlink Number
+ *   of Packets field shall be present, otherwise the Downlink Number
+ *   of Packets field shall not be present.
+ * - Bit 7 to bit 8: Spare, for future use and set to "0".
+ *
+ * At least one bit shall be set to "1". Several bits may be set to "1".
+ *
+ * The Total Volume, Uplink Volume and Downlink Volume fields shall be encoded
+ * as an Unsigned64 binary integer value. They shall contain the total,
+ * uplink or downlink number of octets respectively
+*/
+typedef struct ogs_pfcp_volume_measurement_s {
+    union {
+        struct {
+ED7(uint8_t spare:2;,
+    uint8_t dlnop:1;,
+    uint8_t ulnop:1;,
+    uint8_t tonop:1;,
+    uint8_t dlvol:1;,
+    uint8_t ulvol:1;,
+    uint8_t tovol:1;)
+        };
+    uint8_t flags;
+    };
+
+    uint64_t total_volume;
+    uint64_t uplink_volume;
+    uint64_t downlink_volume;
+    uint64_t total_n_packets;
+    uint64_t uplink_n_packets;
+    uint64_t downlink_n_packets;
+} __attribute__ ((packed)) ogs_pfcp_volume_measurement_t;
+
+/*
+ * 8.2.68 Measurement Information
+ */
+typedef struct ogs_pfcp_measurement_information_s {
+    union {
+        struct {
+ED6(uint8_t spare:3;,
+    uint8_t mnop:1;,
+    uint8_t istm:1;,
+    uint8_t radi:1;,
+    uint8_t inam:1;,
+    uint8_t mbqe:1;)
+        };
+    uint8_t octet5;
+    };
+} __attribute__ ((packed)) ogs_pfcp_measurement_information_t;
+
+/*
+ * 8.2.179 Data Status
+ *
+ * The following flags are coded within Octet 5:
+ *
+ * Bit 1 – DROP: when set to "1", this indicates first DL packet is
+ * discarded by the UP function.
+ * Bit 2 – BUFF: when set to "1", this indicates first DL packet is
+ * received and buffered by the UP function.
+ * Bit 3 to 8 Spare, for future use and set to "0".
+ */
+#define OGS_PFCP_DATA_STATUS_DROP                          (1<<0)
+#define OGS_PFCP_DATA_STATUS_BUFF                          (1<<1)
+typedef uint8_t  ogs_pfcp_data_status_t;
+
+typedef struct ogs_pfcp_user_plane_report_s {
+    ogs_pfcp_report_type_t type;
+    struct {
+        uint8_t pdr_id;
+        uint8_t paging_policy_indication_value;
+        uint8_t qfi;
+    } downlink_data;
+    struct {
+        ogs_pfcp_urr_id_t id;
+        ogs_pfcp_urr_ur_seqn_t seqn;
+        ogs_pfcp_usage_report_trigger_t rep_trigger;
+        ogs_pfcp_start_time_t start_time;
+        ogs_pfcp_end_time_t end_time;
+        ogs_pfcp_volume_measurement_t vol_measurement;
+        ogs_pfcp_duration_measurement_t dur_measurement;
+        ogs_pfcp_time_of_first_packet_t time_of_first_packet;
+        ogs_pfcp_time_of_last_packet_t time_of_last_packet;
+    } usage_report [OGS_MAX_NUM_OF_URR];
+    unsigned int num_of_usage_report;
+    struct {
+        ogs_pfcp_f_teid_t remote_f_teid;
+        int remote_f_teid_len;
+    } error_indication;
+} ogs_pfcp_user_plane_report_t;
+
+int16_t ogs_pfcp_build_volume_measurement(ogs_tlv_octet_t *octet,
+        ogs_pfcp_volume_measurement_t *volume, void *data, int data_len);
+int16_t ogs_pfcp_parse_volume_measurement(
+        ogs_pfcp_volume_measurement_t *volume, ogs_tlv_octet_t *octet);
+
+/*
+ * 8.2.101 User ID
+ *
+ * The User ID IE type shall be encoded as shown in Figure 8.2.101-1.
+ *
+ * The following flags are coded within Octet 5:
+ *
+ * - Bit 1 – IMSIF: If this bit is set to "1",
+ *   then the Length of IMSI and IMSI fields shall be present,
+ *   otherwise these fields shall not be present.
+ * - Bit 2 – IMEIF: If this bit is set to "1",
+ *   then the Length of IMEI and IMEI fields shall be present,
+ *   otherwise these fields shall not be present.
+ * - Bit 3 – MSISDNF: If this bit is set to "1",
+ *   then the Length of MSISDN and MSISDN fields shall be present,
+ *   otherwise these fields shall not be present.
+ * - Bit 4 – NAIF: If this bit is set to "1",
+ *   then the Length of NAI and NAI fields shall be present,
+ *   otherwise these fields shall not be present.
+ * - Bit 5 – SUPIF: If this bit is set to "1",
+ *   then the Length of SUPI and SUPI fields shall be present,
+ *   otherwise these fields shall not be present.
+ * - Bit 6 – GPSIF: If this bit is set to "1",
+ *   then the Length of GPSI and GPSI fields shall be present,
+ *   otherwise these fields shall not be present.
+ * - Bit 7 – PEIF: If this bit is set to "1",
+ *   then the Length of PEI and PEI fields shall be present,
+ *   otherwise these fields shall not be present.
+ * - Bit 8: Spare, for future use and set to "0".
+ *
+ * One or more flags may be set to "1".
+ *
+ * For 5GS User Identities:
+ * -The SUPI field shall only be used for carrying a Global Cable Identifier
+ *  (GCI) or a Global Line Identifier (GLI). The IMSI and NAI, if received
+ *  by the SMF in the SUPI, shall be included in the IMSI and NAI field respectively.
+ * -The GPSI field shall only be used for carrying an External Identifier.
+ *  The MSISDN, if received by the SMF in the SUPI, shall be included
+ *  in the MSISDN field.
+ * -The PEI field shall only be used for carrying an MAC address or
+ *  an Extended Unique Identifier. The IMEI, if received by the SMF in the PEI,
+ *  shall be included in the IMEI field.
+ *
+ * The coding of IMSI field, from octets 7 to 'a' shall be encoded
+ * as the octets 5 to n+4 of the IMSI IE type
+ * specified in clause 8.3 of 3GPP TS 29.274 [9].
+ *
+ * The coding of IMEI field, in octets 'b+1' to 'c' shall be encoded
+ * as the octets 5 to n+4 of the MEI IE type
+ * specified in clause 8.10 of 3GPP TS 29.274 [9].
+ *
+ * The coding of MSISDN field, in octets 'd+1' to 'e' shall be encoded
+ * as the octets 5 to n+4 of the MSISDN IE type
+ * specified in clause 8.11 of 3GPP TS 29.274 [9].
+ *
+ * The coding of the SUPI field, in octets 'h+1' to 'i' shall be encoded
+ * as the Supi data type specified in clause 5.3.2 of 3GPP TS 29.571 [61].
+ *
+ * The coding of the GPSI field, in octets 'j+1' to 'k' shall be encoded
+ * as the Gpsi data type specified in clause 5.3.2 of 3GPP TS 29.571 [61].
+ *
+ * The coding of the PEI field, in octets 'l+1' to 'm' shall be encoded
+ * as the Pei data type specified in clause 5.3.2 of 3GPP TS 29.571 [61].
+ *
+ * The NAI field, in octets 'f+1' to 'g' shall be encoded as an Octet String
+ * (see IETF RFC 4282 [36]).
+ */
+typedef struct ogs_pfcp_user_id_flags_s {
+    union {
+        struct {
+ED8(uint8_t spare:1;,
+    uint8_t peif:1;,
+    uint8_t gpsif:1;,
+    uint8_t supif:1;,
+    uint8_t naif:1;,
+    uint8_t msisdnf:1;,
+    uint8_t imeif:1;,
+    uint8_t imsif:1;)
+        };
+    uint8_t flags;
+    };
+} ogs_pfcp_user_id_flags_t;
+
+typedef struct ogs_pfcp_user_id_s {
+    union {
+        struct {
+ED8(uint8_t spare:1;,
+    uint8_t peif:1;,
+    uint8_t gpsif:1;,
+    uint8_t supif:1;,
+    uint8_t naif:1;,
+    uint8_t msisdnf:1;,
+    uint8_t imeif:1;,
+    uint8_t imsif:1;)
+        };
+    uint8_t flags;
+    };
+
+    uint8_t imsi_len;
+    uint8_t imsi[OGS_MAX_IMSI_LEN];
+    uint8_t imeisv_len;
+    uint8_t imeisv[OGS_MAX_IMEISV_LEN];
+    uint8_t msisdn_len;
+    uint8_t msisdn[OGS_MAX_MSISDN_LEN];
+} ogs_pfcp_user_id_t;
+
+int16_t ogs_pfcp_build_user_id(
+        ogs_tlv_octet_t *octet, ogs_pfcp_user_id_t *user_id,
+        void *data, int data_len);
+
+/*
+ * 8.2.118 3GPP Interface Type
+ *
+ * NOTE 1: If separation of roaming and non-roaming traffic is desired
+ * this value should only be used for the S5-U interface
+ * and "S8-U" (decimal 19) should be used for the S8-U interface.
+ * NOTE 2: If separation of roaming and non-roaming traffic is desired
+ * this value should only be used for the Gn-U interface
+ * and "Gp-U" (decimal 20) should be used for the Gp-U interface.
+ * NOTE 3: If separation of roaming and non-roaming traffic is desired,
+ * this value should only be used for N9 non-roaming interfaces
+ * and (decimal value "21") should be used for N9 roaming interfaces.
+ */
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_S1_U       0
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_S5_S8_U    1  /* NOTE 1 */
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_S4_U       2
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_S11_U      3
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_S12        4
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_GN_GP_U    5  /* NOTE 2 */
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_S2A_U      6
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_S2B_U      7
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_ENB_GTP_U_FOR_DL_DATA_FORWARDING 8
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_ENB_GTP_U_FOR_UL_DATA_FORWARDING 9
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_SGW_UPF_GTP_U_FOR_DL_DATA_FORWARDING 10
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_N3_3GPP_ACCESS 11
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_N3_TRUSTED_NON_3GPP_ACCESS 12
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_N3_UNTRUSTED_NON_3GPP_ACCESS 13
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_N3_FOR_DATA_FORWARDING 14
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_N9         15 /* NOTE 3 */
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_SGI        16
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_N6         17
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_N19        18
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_S8_U       19
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_GP_U       20
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_N9_FOR_ROAMING 21
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_IU_U       22
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_N9_FOR_DATA_FORWARDING 23
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_SXA_U      24
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_SXB_U      25
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_SXC_U      26
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_N4_U       27
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_SGW_UPF_GTP_U_FOR_UL_DATA_FORWARDING 28
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_N6MB_NMB9  29
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_N3MB       30
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_N19MB      31
+#define OGS_PFCP_3GPP_INTERFACE_TYPE_UNKNOWN    0xff
+typedef uint8_t ogs_pfcp_3gpp_interface_type_t;
+
+/*
+ * 8.2.136 PFCPSEReq-Flags
+ *
+ * The following bits within Octet 5 shall indicate:
+ * - Bit 1 – RESTI (Restoration Indication): if this bit is set to "1",
+ *   it indicates to the UP function that the PFCP session to be established is
+ *   to restore an existing PFCP session.
+ * - Bit 2 – SUMPC (Stop of Usage Measurement to Pause Charging):
+ *   if this bit is set to "1", it indicates that the UP function shall
+ *   stop the usage measurement for all URRs with the "ASPOC" flag set to "1".
+ */
+typedef struct ogs_pfcp_sereq_flags_s {
+    union {
+        struct {
+ED3(uint8_t     spare:6;,
+    uint8_t     stop_of_usage_measurement_to_pause_charging:1;,
+    uint8_t     restoration_indication:1;)
+        };
+        uint8_t value;
+    };
+} __attribute__ ((packed)) ogs_pfcp_sereq_flags_t;
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* OGS_PROTO_TYPES_H */
+#endif /* OGS_PFCP_TYPES_H */
