@@ -1432,7 +1432,7 @@ uint8_t ogs_pfcp_object_teid_hash_set(
                     &ogs_gtp_self()->gtpu_resource_list,
                     pdr->dnn, pdr->src_if);
             if (resource) {
-                  if (!((resource->info.v4 && pdr->f_teid.ipv4) ||
+                if (!((resource->info.v4 && pdr->f_teid.ipv4) ||
                       (resource->info.v6 && pdr->f_teid.ipv6))) {
                     ogs_error("CH F-TEID address family mismatch: "
                             "resource[v4:%d v6:%d] fteid[v4:%d v6:%d]",
@@ -1453,8 +1453,7 @@ uint8_t ogs_pfcp_object_teid_hash_set(
                 else
                     pdr->f_teid.teid = pdr->teid;
             } else {
-               
-                    if (!((ogs_gtp_self()->gtpu_addr && pdr->f_teid.ipv4) ||
+                if (!((ogs_gtp_self()->gtpu_addr && pdr->f_teid.ipv4) ||
                     (ogs_gtp_self()->gtpu_addr6 && pdr->f_teid.ipv6))) {
                     ogs_error("CH F-TEID address family mismatch with local "
                             "GTP-U address: gtpu[v4:%p v6:%p] "
@@ -1464,16 +1463,15 @@ uint8_t ogs_pfcp_object_teid_hash_set(
                             pdr->f_teid.ipv4, pdr->f_teid.ipv6);
                     return OGS_PFCP_CAUSE_REQUEST_REJECTED;
                 }
-                 if (OGS_OK !=
-                    ogs_pfcp_sockaddr_to_f_teid(
+                if (OGS_OK != ogs_pfcp_sockaddr_to_f_teid(
                         pdr->f_teid.ipv4 ?
                             ogs_gtp_self()->gtpu_addr : NULL,
                         pdr->f_teid.ipv6 ?
                             ogs_gtp_self()->gtpu_addr6 : NULL,
-                         &pdr->f_teid, &pdr->f_teid_len)) {
-                        ogs_error("ogs_pfcp_sockaddr_to_f_teid() "
+                        &pdr->f_teid, &pdr->f_teid_len)) {
+                    ogs_error("ogs_pfcp_sockaddr_to_f_teid() "
                             "failed in CH path");
-                        return OGS_PFCP_CAUSE_REQUEST_REJECTED;
+                    return OGS_PFCP_CAUSE_REQUEST_REJECTED;
                 }
                 pdr->f_teid.teid = pdr->teid;
             }
@@ -1501,6 +1499,8 @@ uint8_t ogs_pfcp_object_teid_hash_set(
         ogs_fatal("Unknown type [%d]", type);
         ogs_assert_if_reached();
     }
+
+    return OGS_PFCP_CAUSE_REQUEST_ACCEPTED;
 }
 
 ogs_pfcp_object_t *ogs_pfcp_object_find_by_teid(uint32_t teid)
@@ -1700,7 +1700,10 @@ ogs_pfcp_far_t *ogs_pfcp_far_find_or_add(
     far = ogs_pfcp_far_find(sess, id);
     if (!far) {
         far = ogs_pfcp_far_add(sess);
-        ogs_assert(far);
+        if (!far) {
+            ogs_error("ogs_pfcp_far_add() failed");
+            return NULL;
+        }
         far->id = id;
     }
 
@@ -1978,7 +1981,10 @@ ogs_pfcp_urr_t *ogs_pfcp_urr_find_or_add(
     urr = ogs_pfcp_urr_find(sess, id);
     if (!urr) {
         urr = ogs_pfcp_urr_add(sess);
-        ogs_assert(urr);
+        if (!urr) {
+            ogs_error("ogs_pfcp_urr_add() failed");
+            return NULL;
+        }
         urr->id = id;
     }
 
@@ -2063,7 +2069,10 @@ ogs_pfcp_qer_t *ogs_pfcp_qer_find_or_add(
     qer = ogs_pfcp_qer_find(sess, id);
     if (!qer) {
         qer = ogs_pfcp_qer_add(sess);
-        ogs_assert(qer);
+        if (!qer) {
+            ogs_error("ogs_pfcp_qer_add() failed");
+            return NULL;
+        }
         qer->id = id;
     }
 
