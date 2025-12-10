@@ -998,7 +998,10 @@ void mme_s11_handle_create_bearer_request(
 
     ogs_assert(sess);
     bearer = mme_bearer_add(sess);
-    ogs_assert(bearer);
+    if (!bearer) {
+        ogs_error("Failed to allocate bearer for sess %p, returning failure", sess);
+        return ;   
+    }
 
     ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
             mme_ue->mme_s11_teid, sgw_ue->sgw_s11_teid);
